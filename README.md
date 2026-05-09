@@ -1,4 +1,6 @@
-# superscalar-summer
+# Montreal
+
+A RISC-V RV32E processor designed for TinyTapeout.
 
 ## [RV32E](https://docs.riscv.org/reference/isa/unpriv/unpriv-index.html)
 
