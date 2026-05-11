@@ -29,6 +29,26 @@ Each register is 32 bits wide.
 | pc | program counter | Address of current instruction |
 
 ## INSTRUCTION SET
+### Formats
+
+```
+       31      25 24    20 19    15 14   12 11     7 6        0
+      +----------+--------+--------+-------+--------+----------+
+R     |  funct7  |  rs2   |  rs1   | funct3|   rd   |  opcode  |
+      +----------+--------+--------+-------+--------+----------+
+                   (src2)   (src1)           (dest)
+      +-------------------+--------+-------+--------+----------+
+I     |    imm[11:0]      |  rs1   | funct3|   rd   |  opcode  |
+      +-------------------+--------+-------+--------+----------+
+                             (src)           (dest)
+      +----------+--------+--------+-------+--------+----------+
+I-sh  | imm[11:5]|imm[4:0]|  rs1   | funct3|   rd   |  opcode  |
+      +----------+--------+--------+-------+--------+----------+
+                             (src)           (dest)
+```
+
+I-sh is the shift variant of I-type: `imm[11:5]` acts as a discriminator (like `funct7`), and `imm[4:0]` is the shift amount (shamt).
+
 ### R-Type (Register-to-register)
 
 | Instruction | Description | Encoding (`funct7` \| `funct3` \| `opcode`) |
@@ -46,18 +66,22 @@ Each register is 32 bits wide.
 
 ### I-Type (Immediate)
 
-`—` in `imm[11:5]` means those bits carry data (the immediate value), not an encoding discriminator.
-
 #### OP-IMM — Integer immediate ops (opcode `0010011`)
 
-| Instruction | Description | Encoding (`imm[11:5]` \| `funct3` \| `opcode`) |
+| Instruction | Description | Encoding (`imm[11:0]` \| `funct3` \| `opcode`) |
 | ----------- | ----------- | ----------------------------------------------- |
-| ADDI  | Add sign-extended 12-bit immediate to rs1, store in rd. | — \| `000` \| `0010011` |
-| SLTI  | Set rd to 1 if rs1 < sign-extended imm (signed), else 0. | — \| `010` \| `0010011` |
-| SLTIU | Set rd to 1 if rs1 < sign-extended imm (unsigned), else 0. | — \| `011` \| `0010011` |
-| XORI  | Bitwise XOR of rs1 and sign-extended imm, result in rd. | — \| `100` \| `0010011` |
-| ORI   | Bitwise OR of rs1 and sign-extended imm, result in rd. | — \| `110` \| `0010011` |
-| ANDI  | Bitwise AND of rs1 and sign-extended imm, result in rd. | — \| `111` \| `0010011` |
+| ADDI  | Add sign-extended 12-bit immediate to rs1, store in rd. | imm \| `000` \| `0010011` |
+| SLTI  | Set rd to 1 if rs1 < sign-extended imm (signed), else 0. | imm \| `010` \| `0010011` |
+| SLTIU | Set rd to 1 if rs1 < sign-extended imm (unsigned), else 0. | imm \| `011` \| `0010011` |
+| XORI  | Bitwise XOR of rs1 and sign-extended imm, result in rd. | imm \| `100` \| `0010011` |
+| ORI   | Bitwise OR of rs1 and sign-extended imm, result in rd. | imm \| `110` \| `0010011` |
+| ANDI  | Bitwise AND of rs1 and sign-extended imm, result in rd. | imm \| `111` \| `0010011` |
+
+##### Shifting Instructions that carry an encoding disciminator in `imm[11:5]`
+| Instruction | Description | Encoding (`imm[11:5]`\| `funct3` \| `opcode`) |
+| ----------- | ----------- | ----------------------------------------------- |
 | SLLI  | Shift rs1 left by shamt (`imm[4:0]`), logical, store in rd. | `0000000` \| `001` \| `0010011` |
 | SRLI  | Shift rs1 right by shamt (`imm[4:0]`), logical, store in rd. | `0000000` \| `101` \| `0010011` |
 | SRAI  | Shift rs1 right by shamt (`imm[4:0]`), arithmetic, store in rd. | `0100000` \| `101` \| `0010011` |
+
+
