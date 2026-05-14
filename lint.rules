@@ -1,2 +1,4 @@
++no-trailing-spaces
++parameter-name-style=localparam_style:CamelCase|ALL_CAPS
 +port-name-suffix
 +dff-name-style
