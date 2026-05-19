@@ -4,26 +4,34 @@
 // Note: only DUT ports are accessible here - internal signals (sum, diff)
 // cannot be tapped without bind or Verific.
 module simple_alu_top_fv (
-    input logic        clk,
-    input logic [31:0] a,
-    input logic [31:0] b,
-    input logic        sel,
-    input logic        rst
+    input logic        clk_i,
+    input logic [31:0] a_i,
+    input logic [31:0] b_i,
+    input logic        sel_i,
+    input logic        rst_ni
 );
     logic [31:0] y;
     logic        overflow;
 
     // DUT instance
-    simple_alu dut (.*);
+    simple_alu dut (
+        .clk_i      (clk_i),
+        .a_i        (a_i),
+        .b_i        (b_i),
+        .sel_i      (sel_i),
+        .rst_ni     (rst_ni),
+        .y_o        (y),
+        .overflow_o (overflow)
+    );
 
     // Checker instance - observes DUT outputs
     simple_alu_fv u_checker (
-        .clk      (clk),
-        .a        (a),
-        .b        (b),
-        .sel      (sel),
-        .rst      (rst),
-        .y        (y),
-        .overflow (overflow)
+        .clk_i      (clk_i),
+        .a_i        (a_i),
+        .b_i        (b_i),
+        .sel_i      (sel_i),
+        .rst_ni     (rst_ni),
+        .y_i        (y),
+        .overflow_i (overflow)
     );
 endmodule
