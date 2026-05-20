@@ -1,0 +1,22 @@
+[tasks]
+bmc
+cover
+
+[options]
+bmc: mode bmc
+cover: mode cover
+depth 100
+
+[engines]
+smtbmc
+
+[script]
+read -formal -sv simple_alu.sv
+read -formal -sv simple_alu_fv.sv
+read -formal -sv simple_alu_top_fv.sv
+prep -top simple_alu_top_fv
+
+[files]
+../../../rtl/simple_alu.sv
+simple_alu_fv.sv
+simple_alu_top_fv.sv
