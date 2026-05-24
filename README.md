@@ -1,8 +1,10 @@
-# Montreal
+Montreal
+========
 
 A RISC-V RV32E processor designed for TinyTapeout.
 
-## [RV32E](https://docs.riscv.org/reference/isa/unpriv/unpriv-index.html)
+[RV32E](https://docs.riscv.org/reference/isa/unpriv/unpriv-index.html)
+----------------------------------------------------------------------
 
 Reduces number of integer registers to 16 general-purpose registers (x0-x15). Upper 16 registers consume around one quarter of the total area of the core excluding memories, thus their removal saves around 25% core area with a corresponding core power reduction.
 
@@ -28,26 +30,32 @@ Each register is 32 bits wide.
 | x15 | sixth function argument | |
 | pc | program counter | Address of current instruction |
 
-## INSTRUCTION SET
+INSTRUCTION SET
+---------------
+
 ### Formats
 
-```
-       31      25 24    20 19    15 14   12 11     7 6        0
-      +----------+--------+--------+-------+--------+----------+
-R     |  funct7  |  rs2   |  rs1   | funct3|   rd   |  opcode  |
-      +----------+--------+--------+-------+--------+----------+
-                   (src2)   (src1)           (dest)
-      +-------------------+--------+-------+--------+----------+
-I     |    imm[11:0]      |  rs1   | funct3|   rd   |  opcode  |
-      +-------------------+--------+-------+--------+----------+
-                             (src)           (dest)
-      +----------+--------+--------+-------+--------+----------+
-I-sh  | imm[11:5]|imm[4:0]|  rs1   | funct3|   rd   |  opcode  |
-      +----------+--------+--------+-------+--------+----------+
-                             (src)           (dest)
-```
+![U-type instructions (LUI)](https://svg.wavedrom.com/github/ubc-asic/montreal-docs/master/images/u-type-lui.json5)
 
-I-sh is the shift variant of I-type: `imm[11:5]` acts as a discriminator (like `funct7`), and `imm[4:0]` is the shift amount (shamt).
+![U-type instructions (AUIPC)](https://svg.wavedrom.com/github/ubc-asic/montreal-docs/master/images/u-type-auipc.json5)
+
+![J-type instructions](https://svg.wavedrom.com/github/ubc-asic/montreal-docs/master/images/j-type.json5)
+
+![I-type instructions (JALR)](https://svg.wavedrom.com/github/ubc-asic/montreal-docs/master/images/i-type-jalr.json5)
+
+![B-type instructions](https://svg.wavedrom.com/github/ubc-asic/montreal-docs/master/images/b-type.json5)
+
+![I-type instructions (load)](https://svg.wavedrom.com/github/ubc-asic/montreal-docs/master/images/i-type-load.json5)
+
+![S-type instructions](https://svg.wavedrom.com/github/ubc-asic/montreal-docs/master/images/s-type.json5)
+
+![I-type instructions (arithmetic and logic)](https://svg.wavedrom.com/github/ubc-asic/montreal-docs/master/images/i-type-alu.json5)
+
+![I-type instructions (shift)](https://svg.wavedrom.com/github/ubc-asic/montreal-docs/master/images/i-type-shift.json5)
+
+![R-type instructions](https://svg.wavedrom.com/github/ubc-asic/montreal-docs/master/images/r-type.json5)
+
+![I-type instructions (system)](https://svg.wavedrom.com/github/ubc-asic/montreal-docs/master/images/i-type-system.json5)
 
 ### R-Type (Register-to-register)
 
@@ -83,5 +91,3 @@ I-sh is the shift variant of I-type: `imm[11:5]` acts as a discriminator (like `
 | SLLI  | Shift rs1 left by shamt (`imm[4:0]`), logical, store in rd. | `0000000` \| `001` \| `0010011` |
 | SRLI  | Shift rs1 right by shamt (`imm[4:0]`), logical, store in rd. | `0000000` \| `101` \| `0010011` |
 | SRAI  | Shift rs1 right by shamt (`imm[4:0]`), arithmetic, store in rd. | `0100000` \| `101` \| `0010011` |
-
-
