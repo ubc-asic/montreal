@@ -25,6 +25,7 @@ module regfile #(
   localparam int unsigned NUM_CHUNKS = WORD_WIDTH / CHUNK_WIDTH
 ) (
   input logic clk_i,
+  input logic rst_ni,
   input logic [$clog2(NUM_CHUNKS)-1:0] chunk_sel_i,
 
   input  logic [NUM_READ_PORTS-1:0][ ADDR_WIDTH-1:0] raddr_i,
@@ -45,7 +46,9 @@ module regfile #(
   end
 
   always_ff @(posedge clk_i) begin
-    if (wen_i && (waddr_i != '0)) begin
+    if (!rst_ni) begin
+      register <= '0;
+    end else if (wen_i && (waddr_i != '0)) begin
       /* verilog_lint: waive dff-name-style */
       register[waddr_i][chunk_sel_i*CHUNK_WIDTH +: CHUNK_WIDTH] <= wdata_i;
     end
