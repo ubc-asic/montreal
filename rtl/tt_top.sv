@@ -13,7 +13,13 @@
 
 `default_nettype none
 
-module tt_top (
+/*
+ * Tiny Tapeout top-level wrapper.
+ *
+ * IMPORTANT: The module definition MUST follow the Tiny Tapeout specification
+ *            exactly. Do not modify the port names.
+ */
+module tt_top_ubc_montreal (
   /* verilog_lint: waive-start port-name-suffix */
   /* Dedicated inputs. */
   input wire [7:0] ui_in,
@@ -25,14 +31,14 @@ module tt_top (
   input  wire [7:0] uio_in,
   /* I/O: output path. */
   output wire [7:0] uio_out,
-  /* I/O: active high output enable. */
+  /* I/O: active-high output enable. */
   output wire [7:0] uio_oe,
 
   /* Design enable signal. This will be 1 when the design is powered. */
   input wire ena,
   /* Clock. */
   input wire clk,
-  /* Active low reset. */
+  /* Active-low reset. */
   input wire rst_n
   /* verilog_lint: waive-stop port-name-suffix */
 );
@@ -50,7 +56,7 @@ module tt_top (
   u_qspi_controller qspi_controller (
     /* Clock. */
     .clk(),
-    /* Reset. */
+    /* Active-low reset. */
     .rst_n(),
 
     /* I/O: input path. */
@@ -61,4 +67,4 @@ module tt_top (
     .uio_oe()
   );
 
-endmodule : tt_top
+endmodule : tt_top_ubc_montreal

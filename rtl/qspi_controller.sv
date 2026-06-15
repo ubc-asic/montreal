@@ -35,7 +35,7 @@ module qspi_controller (
   input  wire [7:0] uio_in,
   /* I/O: output path. */
   output wire [7:0] uio_out,
-  /* I/O: active high output enable. */
+  /* I/O: active-high output enable. */
   output wire [7:0] uio_oe
   /* verilog_lint: waive-stop port-name-suffix */
 );
