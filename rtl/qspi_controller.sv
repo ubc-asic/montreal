@@ -1,7 +1,8 @@
-// Interface between core and QSPI pmod 
+// Interface between core and QSPI pmod
 // https://onlinedocs.microchip.com/oxy/GUID-450989FA-38E4-4D68-AB61-15ADB29AD718-en-US-6/GUID-C2190631-B6F5-4CD7-B6DB-5267DC280E90_3.html
 
 module qspi_controller (
+    /* verilog_lint: waive-start port-name-suffix */
     // Clock
     input  wire       clk,
 
@@ -11,7 +12,8 @@ module qspi_controller (
     // Bi-directional I/O
     input  wire [7:0] uio_in,   // IOs: Input path
     output wire [7:0] uio_out,  // IOs: Output path
-    output wire [7:0] uio_oe,   // IOs: Enable path (active high: 0=input, 1=output)
+    output wire [7:0] uio_oe    // IOs: Enable path (active high: 0=input, 1=output)
+    /* verilog_lint: waive-stop port-name-suffix */
 );
 
     // ====================================

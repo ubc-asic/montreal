@@ -8,6 +8,7 @@
 `default_nettype none
 
 module tt_top (
+    /* verilog_lint: waive-start port-name-suffix */
     // Dedicated inputs
     input  wire [7:0] ui_in,
 
@@ -27,6 +28,7 @@ module tt_top (
 
     // Reset
     input  wire       rst_n     // reset_n - low to reset
+    /* verilog_lint: waive-stop port-name-suffix */
 );
 
     // All output pins must be assigned. If not used, assign to 0.
@@ -46,7 +48,7 @@ module tt_top (
     u_qspi_controller qspi_controller(
         // Clock
         .clk(),
-        
+
         // Reset
         .rst_n(),
 
