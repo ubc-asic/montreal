@@ -5,8 +5,8 @@ module qspi_controller (
     // Clock
     input  wire       clk,
 
-    // Reset
-    input  wire       rst_n     // reset_n - low to reset
+    // Reset (active low)
+    input  wire       rst_n,
 
     // Bi-directional I/O
     input  wire [7:0] uio_in,   // IOs: Input path
