@@ -52,9 +52,9 @@ module tt_top_ubc_montreal (
   /* Connect all unused inputs to prevent warnings. */
   wire unused = &{ena, clk, rst_n, 1'b0};
 
-  u_rv32e_core_wrapper rv32e_core_wrapper ();
+  rv32e_core_wrapper u_rv32e_core_wrapper ();
 
-  u_qspi_controller qspi_controller (
+  qspi_controller u_qspi_controller (
     /* Clock. */
     .clk(),
     /* Active-low reset. */
