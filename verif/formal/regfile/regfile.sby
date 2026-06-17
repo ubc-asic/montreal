@@ -1,0 +1,23 @@
+[tasks]
+cover
+prove
+
+[options]
+cover: mode cover
+prove: mode prove
+prove: depth 20
+
+[engines]
+smtbmc
+
+[script]
+read -define SYMBIYOSYS=1
+read -formal -sv regfile.sv
+read -formal -sv regfile_check.sv
+read -formal -sv regfile_top.sv
+prep -top regfile_top
+
+[files]
+rtl/regfile.sv
+verif/formal/regfile/regfile_check.sv
+verif/formal/regfile/regfile_top.sv

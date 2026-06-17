@@ -15,9 +15,7 @@
  * read ports (default 2). Register 0 is fixed to 0 for all reads.
  */
 
-module regfile
-  import montreal_pkg::*;
-#(
+module regfile #(
   parameter int unsigned XLEN           = config_pkg::XLEN,
   parameter int unsigned SLICE_WIDTH    = config_pkg::SLICE_WIDTH,
   parameter int unsigned ADDR_WIDTH     = config_pkg::REG_ADDR_WIDTH,
