@@ -15,18 +15,20 @@
  * read ports (default 2). Register 0 is fixed to 0 for all reads.
  */
 
-module regfile #(
-  parameter int unsigned WORD_WIDTH     = 32,
-  parameter int unsigned ADDR_WIDTH     = 4,
-  parameter int unsigned SLICE_WIDTH    = 8,
-  parameter int unsigned NUM_READ_PORTS = 2,
+module regfile
+  import montreal_pkg::*;
+#(
+  parameter int unsigned XLEN           = config_pkg::XLEN,
+  parameter int unsigned SLICE_WIDTH    = config_pkg::SLICE_WIDTH,
+  parameter int unsigned ADDR_WIDTH     = config_pkg::REG_ADDR_WIDTH,
+  parameter int unsigned NUM_READ_PORTS = config_pkg::REG_NUM_READ_PORTS,
 
-  localparam int unsigned NUM_WORDS  = 2 ** ADDR_WIDTH,
-  localparam int unsigned NUM_SLICES = WORD_WIDTH / SLICE_WIDTH
+  localparam int unsigned NUM_WORDS        = 2 ** ADDR_WIDTH,
+  localparam int unsigned SLICE_ADDR_WIDTH = $clog2(XLEN / SLICE_WIDTH)
 ) (
   input logic clk_i,
   input logic rst_ni,
-  input logic [$clog2(NUM_SLICES)-1:0] slice_sel_i,
+  input logic [SLICE_ADDR_WIDTH-1:0] slice_sel_i,
 
   input  logic [NUM_READ_PORTS-1:0][ADDR_WIDTH-1:0]  raddr_i,
   output logic [NUM_READ_PORTS-1:0][SLICE_WIDTH-1:0] rdata_o,
@@ -36,7 +38,7 @@ module regfile #(
   input logic [SLICE_WIDTH-1:0] wdata_i
 );
 
-  logic [NUM_WORDS-1:0][WORD_WIDTH-1:0] register;
+  logic [NUM_WORDS-1:0][XLEN-1:0] register;
 
   always_comb begin
     for (int i = 0; i < NUM_READ_PORTS; i++) begin : gen_read_block
