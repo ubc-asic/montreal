@@ -15,6 +15,8 @@
  * read ports (default 2). Register 0 is fixed to 0 for all reads.
  */
 
+`include "types.svh"
+
 module regfile #(
   parameter int unsigned XLEN           = config_pkg::XLEN,
   parameter int unsigned SLICE_WIDTH    = config_pkg::SLICE_WIDTH,
@@ -24,6 +26,14 @@ module regfile #(
   localparam int unsigned NUM_WORDS        = 2 ** ADDR_WIDTH,
   localparam int unsigned SLICE_ADDR_WIDTH = $clog2(XLEN / SLICE_WIDTH)
 ) (
+/* Expose the internal register state for formal verification.
+ * Yosys/SBY cannot reliably reference hierarchical signals after
+ * elaboration and optimisation. */
+`ifdef FORMAL
+  /* verilog_lint: waive port-name-suffix */
+  output word_bank_t register_dbg,
+`endif
+
   input logic clk_i,
   input logic rst_ni,
   input logic [SLICE_ADDR_WIDTH-1:0] slice_sel_i,
@@ -36,7 +46,12 @@ module regfile #(
   input logic [SLICE_WIDTH-1:0] wdata_i
 );
 
-  logic [NUM_WORDS-1:0][XLEN-1:0] register;
+  word_bank_t register;
+
+/* Debug signal for formal verification. See above. */
+`ifdef FORMAL
+  assign register_dbg = register;
+`endif
 
   always_comb begin
     for (int i = 0; i < NUM_READ_PORTS; i++) begin : gen_read_block

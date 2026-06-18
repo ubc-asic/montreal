@@ -7,7 +7,7 @@ package config_pkg;
 
   /* We use a byte-sliced datapath, inspired by the
    * classic bit-sliced architecture of old CPUs. */
-  localparam int unsigned SLICE_WIDTH      = 8;
+  localparam int unsigned SLICE_WIDTH = 8;
 
   /* The RV32E ISA defines 16 general-purpose registers.
    * We have two read ports to allow for pipelined reads. */
