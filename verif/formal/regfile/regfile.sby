@@ -1,0 +1,23 @@
+[tasks]
+cover
+prove
+
+[options]
+cover: mode cover
+prove: mode prove
+prove: depth 20
+
+[engines]
+smtbmc
+
+[script]
+read -formal -sv config_pkg.sv
+read -formal -sv regfile.sv
+read -formal -sv regfile_ind.sv
+prep -top regfile_ind
+
+[files]
+rtl/types.svh
+rtl/config_pkg.sv
+rtl/regfile.sv
+verif/formal/regfile/regfile_ind.sv
