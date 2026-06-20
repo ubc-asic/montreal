@@ -1,13 +1,50 @@
 /* SPDX-License-Identifier: CERN-OHL-P-2.0 */
 
-/**
- * @brief  Formal verification of regfile requirements
- * @author Warrick Lo
+/*
+ * Copyright 2026 UBC ASIC contributors (Montreal project).
+ *
+ * Author: Warrick Lo <wlo@warricklo.net>
+ *
+ * Formal verification of regfile requirements
+ *
+ * This module verifies the regfile module against the requirements
+ * specified in the design specification.
+ *
+ * The following parameters are used for all tests:
+ * - Word width:           32 bits wide
+ * - Slice width:          8 bits wide
+ * - Number of words:      16 words
+ * - Number of read ports: 2
+ *
+ * The following are design requirements that are assumed to be verifed by construction:
+ * - REQ-REGFILE-010
+ * - REQ-REGFILE-040
+ * REQ-REGFILE-010 is further verified below.
+ *
+ * The following requirements are verified through this module:
+ * - Cover:
+ *   - REQ-REGFILE-053
+ * - Bounded model checking:
+ *   - REQ-REGFILE-010
+ *   - REQ-REGFILE-053
+ * - K-induction:
+ *   - REQ-REGFILE-020
+ *   - REQ-REGFILE-030
+ *   - REQ-REGFILE-041
+ *   - REQ-REGFILE-042
+ *   - REQ-REGFILE-043
+ *   - REQ-REGFILE-050
+ *   - REQ-REGFILE-051
+ *   - REQ-REGFILE-052
+ *   - REQ-REGFILE-060
+ *
+ * See also: MAS, Regfile Specification, version 0.2
+ *           rtl/regfile.sv
  */
 
 `include "types.svh"
 
-module regfile_ind (
+module regfile_fv (
   input logic clk_i,
   input logic rst_ni,
   input logic [1:0] slice_sel_i,
@@ -58,20 +95,17 @@ module regfile_ind (
 
   initial assume (past_valid == '0);
 
-  always_ff @(posedge clk_i) begin
+  always_ff @(posedge clk_i) begin : past_valid_dff
     /* verilog_lint: waive dff-name-style */
     past_valid <= '1;
-  end
+  end : past_valid_dff
 
   /*
    * REQ-REGFILE-010:
    * The module must store NUM_WORDS words, each XLEN bits wide.
-   *
-   * Notes: This verification module assumes NUM_WORDS = 16 and XLEN = 32.
-   *        The definition of 'register' must use the type defined
-   *        in types.svh.
    */
 
+  /* The definition of 'register' must use the type defined in types.svh. */
   initial assert ($bits(register) == 16 * 32);
 
   /*
@@ -89,49 +123,42 @@ module regfile_ind (
    * The read output rdata_o[i] must reflect the slice selected by slice_sel_i
    * within the register selected by raddr_i[i].
    *
-   * Notes: This verification module assumes XLEN = 32 and SLICE_WIDTH = 8.
-   *        These three requirements are easiest to verify together.
+   * Note: These three requirements are easiest to verify together.
    */
 
-  always_comb begin
+  /* We explicitly ignore the use of part-selects to verify the description of REQ-REGFILE-020. */
+  always_comb begin : req_020_050_051
     if (raddr_i[0] != '0) begin
       assert (rdata[0] == register[raddr_i[0]][(slice_sel_i + 1) * 8 - 1 : slice_sel_i * 8]);
     end
     if (raddr_i[1] != '0) begin
       assert (rdata[1] == register[raddr_i[1]][(slice_sel_i + 1) * 8 - 1 : slice_sel_i * 8]);
     end
-  end
+  end : req_020_050_051
 
   /*
    * REQ-REGFILE-030:
    * Register contents must be 0 at most one clock after the synchronous reset is asserted.
    */
 
-  always_ff @(posedge clk_i) begin
+  always_ff @(posedge clk_i) begin : req_030
     if (past_valid && $past(!rst_ni, 1)) begin
       assert (register == '0);
     end
-  end
-
-  /*
-   * REQ-REGFILE-040:
-   * Writes to the register file must only occur on the rising edge of clk_i.
-   */
-
-  /* Structural requirement satisfied by construction. */
+  end : req_030
 
   /*
    * REQ-REGFILE-041:
    * Writes to the register file must only occur when wen_i is asserted.
    */
 
-  always_ff @(posedge clk_i) begin
+  always_ff @(posedge clk_i) begin : req_041
     if (past_valid && $past(rst_ni && !wen_i, 1)) begin
       /* Satisfies the requirement, but possibly not the intended RTL behaviour.
        * See ticket #14. */
       assert ($stable(register));
     end
-  end
+  end : req_041
 
   /*
    * REQ-REGFILE-042:
@@ -143,31 +170,34 @@ module regfile_ind (
   /* We'll use a part-select to obtain the slice data since we can assume that
    * slice_sel_i will select the correct slice within the target register,
    * according to requirement REQ-REGFILE-020. */
-  always_ff @(posedge clk_i) begin
-    for (int i = 0; i < 16; i++) begin
-      for (int j = 0; j < 4; j++) begin
+  always_ff @(posedge clk_i) begin : req_042
+    /* For register 0, this test will specifically permit writes targeting
+     * the register to succeed. The stability of register 0 is separately
+     * verified below in REQ-REGFILE-043. */
+    for (int i = 0; i < 16; i++) begin : word_loop
+      for (int j = 0; j < 4; j++) begin : slice_loop
         /* Ignore reset events. */
-        if (!past_valid) begin
-        end else if ($past(!rst_ni)) begin
-        end else if ((i == $past(waddr_i)) && (j == $past(slice_sel_i))) begin
-          assert ($stable(register[i][j*8+:8]) || (register[i][j*8+:8] == $past(wdata_i)));
-        end else begin
-          assert ($stable(register[i][j*8+:8]));
+        if (past_valid && $past(rst_ni, 1)) begin
+          if ($past((waddr_i == i) && (slice_sel_i == j), 1)) begin
+            assert ($stable(register[i][j*8+:8]) || (register[i][j*8+:8] == $past(wdata_i, 1)));
+          end else begin
+            assert ($stable(register[i][j*8+:8]));
+          end
         end
-      end
-    end
-  end
+      end : slice_loop
+    end : word_loop
+  end : req_042
 
   /*
    * REQ-REGFILE-043:
    * Writes to register 0 shall be silently ignored, regardless of the state of wen_i.
    */
 
-  always_ff @(posedge clk_i) begin
-    if (past_valid && $past(rst_ni && waddr_i == '0)) begin
+  always_ff @(posedge clk_i) begin : req_043
+    if (past_valid && $past(rst_ni && (waddr_i == '0), 1)) begin
       assert ($stable(register[0]));
     end
-  end
+  end : req_043
 
   /*
    * REQ-REGFILE-052:
@@ -175,14 +205,14 @@ module regfile_ind (
    * regardless of any prior writes to register 0.
    */
 
-  always_comb begin
+  always_comb begin : req_052
     if (raddr_i[0] == '0) assert (rdata[0] == '0);
     if (raddr_i[1] == '0) assert (rdata[1] == '0);
-  end
+  end : req_052
 
   /*
    * REQ-REGFILE-053:
-   * Requirement DR-REGFILE-052 shall be unconditional: it must hold at power-on
+   * Requirement REQ-REGFILE-052 shall be unconditional: it must hold at power-on
    * without reset having been asserted, and at all times during normal operation.
    */
 
@@ -190,13 +220,13 @@ module regfile_ind (
 
   initial assume (rst_asserted == '0);
 
-  always_ff @(posedge clk_i) begin
+  always_ff @(posedge clk_i) begin : req_053
     if (!rst_ni) begin
       rst_asserted <= '1;
     end
 
-    cover (!rst_asserted);
-  end
+    cover (!rst_asserted && wen_i && (waddr_i == '0));
+  end : req_053
 
   /*
    * REQ-REGFILE-060:
@@ -205,17 +235,14 @@ module regfile_ind (
    * the register prior to the rising clock edge of the current cycle.
    */
 
-  logic [7:0] x0, x8;
-  assign x0 = register[0];
-  assign x8 = register[8];
-
-  always_comb begin
+  /* Similar to above, we will use a part-select here. */
+  always_comb begin : req_060
     if (wen_i && raddr_i[0] != '0 && raddr_i[0] == waddr_i) begin
       assert (rdata[0] == register[raddr_i[0]][slice_sel_i*8+:8]);
     end
     if (wen_i && raddr_i[1] != '0 && raddr_i[1] == waddr_i) begin
       assert (rdata[1] == register[raddr_i[1]][slice_sel_i*8+:8]);
     end
-  end
+  end : req_060
 
-endmodule : regfile_ind
+endmodule : regfile_fv
