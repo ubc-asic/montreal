@@ -13,11 +13,11 @@ smtbmc
 [script]
 read -formal -sv config_pkg.sv
 read -formal -sv regfile.sv
-read -formal -sv regfile_ind.sv
-prep -top regfile_ind
+read -formal -sv regfile_fv.sv
+prep -top regfile_fv
 
 [files]
 rtl/types.svh
 rtl/config_pkg.sv
 rtl/regfile.sv
-verif/formal/regfile/regfile_ind.sv
+verif/formal/regfile/regfile_fv.sv
