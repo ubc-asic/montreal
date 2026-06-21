@@ -1,0 +1,26 @@
+name: Test
+
+on: [push, pull_request]
+
+jobs:
+  formal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: Setup python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - name: Install yosys
+        shell: bash
+        run: pip install yowasp-yosys==0.66.0.0.post1165
+      - name: Run test
+        shell: bash
+        run: yowasp-sby -f verif/formal/regfile/regfile.sby
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: formal-verification
+          path: |
+            verif/formal/regfile/regfile_cover/*
+            verif/formal/regfile/regfile_prove/*
