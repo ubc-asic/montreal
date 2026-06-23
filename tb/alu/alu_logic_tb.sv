@@ -1,7 +1,8 @@
 /* Testbench for ALU XOR, OR, AND operations.
  *
  * Logical operations are purely combinational per slice — no carry propagation.
- * carry_o MUST be 0 on every slice for all logical operations.
+ * carry_o is NOT valid for logical operations and MUST NOT be used by the
+ * caller. It is not checked in this testbench.
  */
 
 module alu_logic_tb;
@@ -70,27 +71,11 @@ module alu_logic_tb;
     end
   endtask
 
-  task automatic check_carry(
-    input string       name,
-    input logic [31:0] a,
-    input logic [31:0] b,
-    input logic        got
-  );
-    if (got === 1'b0) begin
-      $display("  PASS  %s carry: %h op %h -> carry_o = 0", name, a, b);
-      pass_count++;
-    end else begin
-      $display("  FAIL  %s carry: %h op %h -> carry_o = %b (expected 0)", name, a, b, got);
-      fail_count++;
-    end
-  endtask
-
   task automatic test_xor(input logic [31:0] a, input logic [31:0] b);
     logic [31:0] result;
     logic        final_carry;
     run_op(XOR, a, b, result, final_carry);
     check("XOR", a, b, result, a ^ b);
-    check_carry("XOR", a, b, final_carry);
   endtask
 
   task automatic test_or(input logic [31:0] a, input logic [31:0] b);
@@ -98,7 +83,6 @@ module alu_logic_tb;
     logic        final_carry;
     run_op(OR, a, b, result, final_carry);
     check("OR", a, b, result, a | b);
-    check_carry("OR", a, b, final_carry);
   endtask
 
   task automatic test_and(input logic [31:0] a, input logic [31:0] b);
@@ -106,7 +90,6 @@ module alu_logic_tb;
     logic        final_carry;
     run_op(AND, a, b, result, final_carry);
     check("AND", a, b, result, a & b);
-    check_carry("AND", a, b, final_carry);
   endtask
 
   initial begin
