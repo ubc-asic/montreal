@@ -54,11 +54,20 @@ module alu
         result_o = adder_result[SLICE_WIDTH-1:0];
       end
       /* XOR. */
-      3'b100: begin end
+      3'b100: begin 
+        result_o = a_i ^ b_i;
+        carry_d = 0; 
+      end
       /* OR. */
-      3'b110: begin end
+      3'b110: begin
+        result_o = a_i | b_i;
+        carry_d = 0;
+      end
       /* AND. */
-      3'b111: begin end
+      3'b111: begin 
+        result_o = a_i & b_i;
+        carry_d = 0;
+      end 
       default: begin end
     endcase
   end : alu_core
