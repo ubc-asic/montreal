@@ -1,9 +1,12 @@
 [tasks]
 cover
+bmc
 prove
 
 [options]
 cover: mode cover
+bmc: mode bmc
+bmc: depth 50
 prove: mode prove
 prove: depth 20
 
@@ -20,4 +23,4 @@ prep -top regfile_fv
 rtl/types.svh
 rtl/config_pkg.sv
 rtl/regfile.sv
-verif/formal/regfile/regfile_fv.sv
+dv/formal/regfile/regfile_fv.sv

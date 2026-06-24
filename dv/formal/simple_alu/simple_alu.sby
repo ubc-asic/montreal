@@ -17,6 +17,6 @@ read -formal -sv simple_alu_top_fv.sv
 prep -top simple_alu_top_fv
 
 [files]
-../../../rtl/simple_alu.sv
-simple_alu_fv.sv
-simple_alu_top_fv.sv
+rtl/simple_alu.sv
+dv/formal/simple_alu/simple_alu_fv.sv
+dv/formal/simple_alu/simple_alu_top_fv.sv
