@@ -30,14 +30,14 @@ module alu
   /* Adder width is SLICE_WIDTH + 1 to account for carry-out. */
   logic [SLICE_WIDTH:0] adder_a, adder_b, adder_result;
 
-  /* For the first slice, carry-in must be driven to zero for addition 
-   * and one for subtraction or comparisons. All other slices use the 
+  /* For the first slice, carry-in must be driven to zero for addition
+   * and one for subtraction or comparisons. All other slices use the
    * carry-out from the previous slice */
 
   assign carry   = (count_i == '0) ? negate_b : carry_q;
 
   /* ADD, SUB, SLT, SLTU use the same adder to computer their results*/
-  
+
   assign adder_a = {1'b0, a_i};
   assign adder_b = {1'b0, (b_i ^ {SLICE_WIDTH{negate_b}})};
   assign adder_result = adder_a + adder_b + (SLICE_WIDTH + 1)'(carry);
@@ -54,20 +54,17 @@ module alu
         result_o = adder_result[SLICE_WIDTH-1:0];
       end
       /* XOR. */
-      3'b100: begin 
+      3'b100: begin
         result_o = a_i ^ b_i;
-        carry_d = 0; 
       end
       /* OR. */
       3'b110: begin
         result_o = a_i | b_i;
-        carry_d = 0;
       end
       /* AND. */
-      3'b111: begin 
+      3'b111: begin
         result_o = a_i & b_i;
-        carry_d = 0;
-      end 
+      end
       default: begin end
     endcase
   end : alu_core
