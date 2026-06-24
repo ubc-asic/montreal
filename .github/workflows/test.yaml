@@ -10,11 +10,13 @@ jobs:
     - uses: YosysHQ/setup-oss-cad-suite@v4
     - name: Run test
       shell: bash
-      run: sby -f dv/formal/regfile/regfile.sby
+      run: |
+        sby -f dv/formal/regfile/regfile.sby
     - name: Upload artifacts
       uses: actions/upload-artifact@v7
       with:
         name: formal-verification
         path: |
+          dv/formal/regfile/regfile_bmc/*
           dv/formal/regfile/regfile_cover/*
           dv/formal/regfile/regfile_prove/*
