@@ -5,6 +5,10 @@
 .vscode
 .claude/
 
+# iverilog build artifacts
+*.vvp
+obj_dir/
+
 # SymbiYosys output
 verif/formal/simple_alu/simple_alu/
 verif/formal/simple_alu/simple_alu_bmc/
