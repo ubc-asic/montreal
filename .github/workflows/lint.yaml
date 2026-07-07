@@ -6,11 +6,11 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@master
-      - uses: chipsalliance/verible-linter-action@main
-        with:
-          config_file: "lint.rules"
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Fail on lint errors
-        run: |
-          verible-verilog-lint --lint_fatal=true --rules_config=lint.rules $(find . -name "*.sv" -o -name "*.v")
+    - uses: actions/checkout@master
+    - uses: chipsalliance/verible-linter-action@main
+      with:
+        config_file: "lint.rules"
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+    - name: Fail on lint errors
+      run: |
+        verible-verilog-lint --lint_fatal=true --rules_config=lint.rules $(find . -name "*.sv" -o -name "*.v")
