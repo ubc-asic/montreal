@@ -8,11 +8,12 @@ module alu #(
 
   localparam int unsigned SLICE_ADDR_WIDTH = $clog2(XLEN / SLICE_WIDTH)
 ) (
-  input logic   clk_i,
-  input logic   rst_ni,
-  input fu_op_t alu_op_i,
+  input logic clk_i,
+  input logic rst_ni,
 
-  input logic [SLICE_ADDR_WIDTH-1:0] count_i,
+  input logic [SLICE_ADDR_WIDTH:0] cycle_i,
+
+  input fu_op_t alu_op_i,
 
   input slice_t a_i,
   input slice_t b_i,
@@ -32,7 +33,7 @@ module alu #(
   /* For the first slice, carry-in must be driven to zero for addition
    * and one for subtraction or comparisons. All other slices use the
    * carry-out from the previous slice */
-  assign carry = (count_i == '0) ? negate_b : carry_q;
+  assign carry = (cycle_i == '0) ? negate_b : carry_q;
 
   /* Adder width is SLICE_WIDTH + 1 to account for carry-out. */
   logic [SLICE_WIDTH:0] adder_a, adder_b, adder_result;
