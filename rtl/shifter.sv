@@ -30,12 +30,13 @@ module shifter #(
   input logic rst_ni,
 
   /* Counter input. */
-  input logic [SLICE_ADDR_WIDTH-1:0] cycle_i,
+  input logic [SLICE_ADDR_WIDTH:0] cycle_i,
 
   /* Shift direction. 0: left; 1: right. */
   input logic shift_type_i,
   /* Arithmetic shift. */
   input logic shift_arithmetic_i,
+  /* Shift amount. */
   input logic [$clog2(XLEN)-1:0] shamt_i,
 
   input  slice_t data_i,
@@ -48,17 +49,22 @@ module shifter #(
   logic fill_d, fill_q;
   slice_t carry_d, carry_q, carry_in;
 
-  /* Slice shift amounts: shamt1 generates bits kept in this slice; shamt2 generates bits
-   * spilled into the carry for the next slice. If shamt1 is 0, then the carry should be 0. */
+  /* Slice shift amounts: shamt1 generates bits kept in this slice;
+   * shamt2 generates bits spilled into the carry for the next slice.
+   * If shamt1 is 0, then the carry should be 0. */
   logic no_carry;
   logic [SLICE_SHAMT_WIDTH-1:0] shamt1, shamt2;
   assign shamt1 = shamt_i[SLICE_SHAMT_WIDTH-1:0];
   assign {no_carry, shamt2}
       = (SLICE_SHAMT_WIDTH+1)'(SLICE_WIDTH) - (SLICE_SHAMT_WIDTH+1)'(shamt1);
 
-  /* Address of the read slice. Counts up from the least significant slice for
-   * left shifts and down from the most significant slice for right shifts. */
-  assign rslice_o = shift_type_i ? ~cycle_i : cycle_i;
+  /* Index of the read slice: left shifts take four cycles, counting up
+   * from the least significant slice; right shifts take one extra cycle,
+   * during which cycle 0 latches shamt and the slices are then read
+   * in descending order starting from the most significant slice. */
+  assign rslice_o = shift_type_i
+      ? ~(cycle_i[SLICE_ADDR_WIDTH-1:0] - 1)
+      : cycle_i[SLICE_ADDR_WIDTH-1:0];
 
   /* Signed difference between input and output slices. Must be 1 bit wider
    * so the wrap can be detected in the MSB. */
@@ -79,20 +85,20 @@ module shifter #(
 
     /* First slice processed for this word. This is the least significant slice
      * for left shifts and the most significant slice for right shifts. */
-    if (~|cycle_i) begin
+    if ((shift_type_i && &rslice_o) || (!shift_type_i && ~|rslice_o)) begin
       /* For arithmetic right shifts of a negative value, carry_in is seeded
        * with sign bits, which is for computing the arithmetic shift right
        * of this slice, and the fill bit should be 1. */
       if (shift_type_i && shift_arithmetic_i && sign) begin
         carry_in = no_carry ? '0 : ({SLICE_WIDTH{1'b1}} << shamt2);
-        fill_d = '1;
+        fill_d   = '1;
       end else begin
         carry_in = '0;
-        fill_d = '0;
+        fill_d   = '0;
       end
     end else begin
       carry_in = carry_q;
-      fill_d = fill_q;
+      fill_d   = fill_q;
     end
 
     /* Combine this slice's shifted data with the shifted result spilled
