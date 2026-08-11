@@ -120,12 +120,12 @@ module fu #(
       ready_d = ready_o;
       /* Once the word is finished processing, assert ready_o next clock. */
       unique case (fu_op_d)
-        ADD, SUB, XOR, OR, AND, SLT, SLTU, SLL: begin
-          /* ALU operations and SLL finish after SLICE_COUNT cycles. */
+        ADD, SUB, XOR, OR, AND, SLL: begin
+          /* Arithmetic, bitwise, and SLL operations finish after SLICE_COUNT cycles. */
           if (cycle_i == SLICE_COUNT - 1) ready_d = '1;
         end
-        SRL, SRA: begin
-          /* SRL and SRA operations require an extra cycle. */
+        SLT, SLTU, SRL, SRA: begin
+          /* Comparison and right shift operations require an extra cycle. */
           if (cycle_i == SLICE_COUNT) ready_d = '1;
         end
         default: begin end
@@ -141,13 +141,35 @@ module fu #(
 
     /* Output multiplexer. We use fu_op_d with the same reasoning as above. */
     unique case (fu_op_d)
-      /* ALU operations. */
-      ADD, SUB, XOR, OR, AND, SLT, SLTU: begin
+      /* Arithmetic and bitwise operations. */
+      ADD, SUB, XOR, OR, AND: begin
         rslice_o = cycle_i;
         wslice_o = cycle_i;
         result_o = alu_result;
       end
-      /* Shifter operations. */
+      /* Comparison operations. */
+      SLT, SLTU: begin
+        if (cycle_i == SLICE_COUNT) begin
+          /* Both operations write to slice 0, but SLT requires reading
+           * each operand's sign bit (MSB of slice 3). */
+          rslice_o = 3;
+          wslice_o = 0;
+          if (fu_op_d == SLTU) begin
+            result_o = {(SLICE_WIDTH-1)'('0), ~alu_carry};
+          end else begin
+            /* Check if A is positive and B is negative. Otherwise, if
+             * both are the same sign, use the same result as SLTU. */
+            result_o = {(SLICE_WIDTH-1)'('0),
+                (a_i[SLICE_WIDTH-1] & ~b_i[SLICE_WIDTH-1])
+                | (~(a_i[SLICE_WIDTH-1] ^ b_i[SLICE_WIDTH-1]) & ~alu_carry)};
+          end
+        end else begin
+          rslice_o = cycle_i;
+          wslice_o = cycle_i;
+          result_o = '0;
+        end
+      end
+      /* Shift operations. */
       SLL, SRL, SRA: begin
         rslice_o = shifter_rslice;
         wslice_o = shifter_wslice;

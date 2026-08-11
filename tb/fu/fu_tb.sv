@@ -94,6 +94,8 @@ module fu_tb;
         XOR:     expected = a ^ b;
         OR:      expected = a | b;
         AND:     expected = a & b;
+        SLT:     expected = $signed(a) < $signed(b);
+        SLTU:    expected = $unsigned(a) < $unsigned(b);
         SLL:     expected = a << b[5:0];
         SRL:     expected = a >> b[5:0];
         SRA:     expected = $signed(a) >>> b[5:0];
@@ -124,7 +126,7 @@ module fu_tb;
 
   initial begin
 
-    automatic fu_op_t alu_ops[$]   = '{ADD, SUB, XOR, OR, AND};
+    automatic fu_op_t alu_ops[$]   = '{ADD, SUB, XOR, OR, AND, SLT, SLTU};
     automatic fu_op_t shift_ops[$] = '{SLL, SRL, SRA};
 
     num = 0;
@@ -272,6 +274,60 @@ module fu_tb;
     a = 32'ha5_a5_a5_a5;
     b = 32'ha5_a5_a5_a5;
     check(32'ha5_a5_a5_a5);
+
+    fu_op = SLT;
+
+    /* SLT: minimum negative versus maximum positive (A < B, result is 1). */
+    a = 32'h80_00_00_00;
+    b = 32'h7f_ff_ff_ff;
+    check(32'h00_00_00_01);
+
+    /* SLT: maximum positive versus minimum negative (A > B, result is 0). */
+    a = 32'h7f_ff_ff_ff;
+    b = 32'h80_00_00_00;
+    check(32'h00_00_00_00);
+
+    /* SLT: -1 versus 0 (A < B, result is 1). */
+    a = 32'hff_ff_ff_ff;
+    b = 32'h00_00_00_00;
+    check(32'h00_00_00_01);
+
+    /* SLT: A versus A (equal, result is 0). */
+    a = 32'ha5_a5_a5_a5;
+    b = 32'ha5_a5_a5_a5;
+    check(32'h00_00_00_00);
+
+    /* SLT: 0 versus 0 (equal, result is 0). */
+    a = 32'h00_00_00_00;
+    b = 32'h00_00_00_00;
+    check(32'h00_00_00_00);
+
+    fu_op = SLTU;
+
+    /* SLTU: minimum negative versus maximum positive, unsigned (A > B, result is 0). */
+    a = 32'h80_00_00_00;
+    b = 32'h7f_ff_ff_ff;
+    check(32'h00_00_00_00);
+
+    /* SLTU: 0 versus maximum unsigned (A < B, result is 1). */
+    a = 32'h00_00_00_00;
+    b = 32'hff_ff_ff_ff;
+    check(32'h00_00_00_01);
+
+    /* SLTU: maximum unsigned versus 0 (A > B, result is 0). */
+    a = 32'hff_ff_ff_ff;
+    b = 32'h00_00_00_00;
+    check(32'h00_00_00_00);
+
+    /* SLTU: A versus A (equal, result is 0). */
+    a = 32'ha5_a5_a5_a5;
+    b = 32'ha5_a5_a5_a5;
+    check(32'h00_00_00_00);
+
+    /* SLTU: 0 versus 0 (equal, result is 0). */
+    a = 32'h00_00_00_00;
+    b = 32'h00_00_00_00;
+    check(32'h00_00_00_00);
 
     /* Randomised test cases. */
 
