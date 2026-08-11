@@ -36,14 +36,15 @@ module regfile #(
 
   input logic clk_i,
   input logic rst_ni,
-  input logic [SLICE_ADDR_WIDTH-1:0] slice_sel_i,
 
+  input  logic [SLICE_ADDR_WIDTH-1:0]                rslice_i,
   input  logic [NUM_READ_PORTS-1:0][ADDR_WIDTH-1:0]  raddr_i,
   output logic [NUM_READ_PORTS-1:0][SLICE_WIDTH-1:0] rdata_o,
 
   input logic wen_i,
-  input logic [ADDR_WIDTH-1:0]  waddr_i,
-  input logic [SLICE_WIDTH-1:0] wdata_i
+  input logic [SLICE_ADDR_WIDTH-1:0] wslice_i,
+  input logic [ADDR_WIDTH-1:0]       waddr_i,
+  input logic [SLICE_WIDTH-1:0]      wdata_i
 );
 
   word_bank_t register;
@@ -56,7 +57,7 @@ module regfile #(
   always_comb begin
     for (int i = 0; i < NUM_READ_PORTS; i++) begin : gen_read_block
       rdata_o[i] = (raddr_i[i] == '0)
-          ? '0 : register[raddr_i[i]][slice_sel_i*SLICE_WIDTH +: SLICE_WIDTH];
+          ? '0 : register[raddr_i[i]][rslice_i*SLICE_WIDTH +: SLICE_WIDTH];
     end : gen_read_block
   end
 
@@ -65,7 +66,7 @@ module regfile #(
       register <= '0;
     end else if (wen_i && (waddr_i != '0)) begin
       /* verilog_lint: waive dff-name-style */
-      register[waddr_i][slice_sel_i*SLICE_WIDTH +: SLICE_WIDTH] <= wdata_i;
+      register[waddr_i][wslice_i*SLICE_WIDTH +: SLICE_WIDTH] <= wdata_i;
     end
   end
 
