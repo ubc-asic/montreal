@@ -1,11 +1,16 @@
-/* SPDX-License-Identifier: CERN-OHL-P-2.0 */
-
 /*
- * Copyright 2026 UBC ASIC contributors (Montreal project).
+ * Copyright 2026 Project Montreal contributors.
  *
- * Author: Warrick Lo <wlo@warricklo.net>
+ * SPDX-License-Identifier: CERN-OHL-P-2.0
  *
- * Shifter
+ * Project:       Montreal (RV32E SoC for Tiny Tapeout)
+ *
+ * Module:        shifter
+ * Specification: Montreal MAS, Functional Unit v0.1
+ * Version:       0.1.0
+ * Authors:       Warrick Lo <wlo@warricklo.net>
+ *
+ * Description:   Serial shifter
  *
  * This module implements the shifter for the functional unit (FU).
  * Each word is shifted one slice at a time (default 8 bits). The input
@@ -56,7 +61,7 @@ module shifter #(
   logic [SLICE_SHAMT_WIDTH-1:0] shamt1, shamt2;
   assign shamt1 = shamt_i[SLICE_SHAMT_WIDTH-1:0];
   assign {no_carry, shamt2}
-      = (SLICE_SHAMT_WIDTH+1)'(SLICE_WIDTH) - (SLICE_SHAMT_WIDTH+1)'(shamt1);
+      = (SLICE_SHAMT_WIDTH + 1)'(SLICE_WIDTH) - (SLICE_SHAMT_WIDTH + 1)'(shamt1);
 
   /* Index of the read slice: left shifts take four cycles, counting up
    * from the least significant slice; right shifts take one extra cycle,
@@ -69,7 +74,7 @@ module shifter #(
   /* Signed difference between input and output slices. Must be 1 bit wider
    * so the wrap can be detected in the MSB. */
   logic [SLICE_ADDR_WIDTH:0] slice_diff;
-  assign slice_diff = (SLICE_ADDR_WIDTH+1)'(rslice_o) - (SLICE_ADDR_WIDTH+1)'(wslice_o);
+  assign slice_diff = (SLICE_ADDR_WIDTH + 1)'(rslice_o) - (SLICE_ADDR_WIDTH + 1)'(wslice_o);
 
   /* Check when the write slice address wraps around the slice boundary,
    * indicating that the slice should be filled with the fill bit. */

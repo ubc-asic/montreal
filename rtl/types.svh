@@ -1,3 +1,17 @@
+/*
+ * Copyright 2026 Project Montreal contributors.
+ *
+ * SPDX-License-Identifier: CERN-OHL-P-2.0
+ *
+ * Project:     Montreal (RV32E SoC for Tiny Tapeout)
+ *
+ * File:        types.svh
+ * Version:     0.1.0
+ * Authors:     Warrick Lo <wlo@warricklo.net>
+ *
+ * Description: Type definitions
+ */
+
 `ifndef TYPES_SVH
 `define TYPES_SVH
 

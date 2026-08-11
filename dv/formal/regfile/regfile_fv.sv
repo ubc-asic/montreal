@@ -1,11 +1,15 @@
-/* SPDX-License-Identifier: CERN-OHL-P-2.0 */
-
 /*
- * Copyright 2026 UBC ASIC contributors (Montreal project).
+ * Copyright 2026 Project Montreal contributors.
  *
- * Author: Warrick Lo <wlo@warricklo.net>
+ * SPDX-License-Identifier: CERN-OHL-P-2.0
  *
- * Formal verification of regfile requirements
+ * Project:      Montreal (RV32E SoC for Tiny Tapeout)
+ *
+ * Module:       regfile_fv
+ * Tool version: Yosys sby 0.54
+ * Authors:      Warrick Lo <wlo@warricklo.net>
+ *
+ * Description:  Formal verification of regfile requirements
  *
  * This module verifies the regfile module against the requirements
  * specified in the design specification.

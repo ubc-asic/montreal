@@ -1,4 +1,14 @@
-/* Testbench for ALU ADD and SUB operations.
+/*
+ * Copyright 2026 Project Montreal contributors.
+ *
+ * SPDX-License-Identifier: CERN-OHL-P-2.0
+ *
+ * Project:     Montreal (RV32E SoC for Tiny Tapeout)
+ *
+ * Module:      alu_add_sub_tb
+ * Authors:     Dariell Sugiaman <dari3llsugiaman@gmail.com>
+ *
+ * Description: Testbench for ALU ADD and SUB operations
  *
  * Functional requirements verified:
  *   FR-ALU-ADD-010 to FR-ALU-ADD-040
@@ -9,23 +19,20 @@
 module alu_add_sub_tb;
   import montreal_pkg::*;
 
-  logic     clk_i;
-  logic     rst_ni;
-  fu_op_t   alu_op_i;
+  logic clk_i, rst_ni, carry_o;
   logic [1:0] count_i;
-  slice_t   a_i, b_i;
-  slice_t   result_o;
-  logic     carry_o;
+  fu_op_t alu_op_i;
+  slice_t a_i, b_i, result_o;
 
   alu dut (
-    .clk_i    (clk_i),
-    .rst_ni   (rst_ni),
-    .alu_op_i (alu_op_i),
-    .count_i  (count_i),
-    .a_i      (a_i),
-    .b_i      (b_i),
-    .result_o (result_o),
-    .carry_o  (carry_o)
+    .clk_i   (clk_i),
+    .rst_ni  (rst_ni),
+    .alu_op_i(alu_op_i),
+    .count_i (count_i),
+    .a_i     (a_i),
+    .b_i     (b_i),
+    .result_o(result_o),
+    .carry_o (carry_o)
   );
 
   /* 10ns clock period. */
@@ -38,31 +45,31 @@ module alu_add_sub_tb;
   /* Run one 32-bit ADD or SUB operation across 4 slices.
    * Inputs are presented on negedge so they are stable at the following posedge,
    * where carry_q updates. Result is sampled before the posedge. */
-  task automatic run_op(
-    input  fu_op_t      op,
+  task automatic run_op (
+    input  fu_op_t op,
     input  logic [31:0] a,
     input  logic [31:0] b,
     output logic [31:0] result,
-    output logic        final_carry
+    output logic final_carry
   );
     for (int i = 0; i < 4; i++) begin
       @(negedge clk_i);
       alu_op_i = op;
       count_i  = i[1:0];
-      a_i      = a[i*8 +: 8];
-      b_i      = b[i*8 +: 8];
+      a_i      = a[i*8+:8];
+      b_i      = b[i*8+:8];
 
-      #1; /* Wait for combinational outputs to settle. */
-      result[i*8 +: 8] = result_o;
+      #1;  // Wait for combinational outputs to settle.
+      result[i*8+:8] = result_o;
       if (i == 3) final_carry = carry_o;
 
-      @(posedge clk_i); /* Clock edge registers carry_d into carry_q for next slice. */
+      @(posedge clk_i);  // Clock edge registers carry_d into carry_q for next slice.
     end
   endtask
 
   /* Check result and print pass/fail. */
-  task automatic check(
-    input string       name,
+  task automatic check (
+    input string name,
     input logic [31:0] a,
     input logic [31:0] b,
     input logic [31:0] got,
@@ -77,52 +84,62 @@ module alu_add_sub_tb;
     end
   endtask
 
-  task automatic check_carry(
+  task automatic check_carry (
     input string name,
     input logic [31:0] a,
     input logic [31:0] b,
-    input logic        got,
-    input logic        expected
+    input logic got,
+    input logic expected
   );
     if (got === expected) begin
       $display("  PASS  %s carry: %h op %h -> carry_o = %b", name, a, b, got);
       pass_count++;
     end else begin
       $display("  FAIL  %s carry: %h op %h -> carry_o = %b (expected %b)",
-               name, a, b, got, expected);
+          name, a, b, got, expected);
       fail_count++;
     end
   endtask
 
-  task automatic test_add(input logic [31:0] a, input logic [31:0] b);
+  task automatic test_add (
+    input logic [31:0] a,
+    input logic [31:0] b
+  );
     logic [31:0] result;
-    logic        final_carry;
+    logic final_carry;
     run_op(ADD, a, b, result, final_carry);
     check("ADD", a, b, result, a + b);
   endtask
 
-  task automatic test_sub(input logic [31:0] a, input logic [31:0] b);
+  task automatic test_sub (
+    input logic [31:0] a,
+    input logic [31:0] b
+  );
     logic [31:0] result;
-    logic        final_carry;
+    logic final_carry;
     run_op(SUB, a, b, result, final_carry);
     check("SUB", a, b, result, a - b);
   endtask
 
-  task automatic test_add_carry(
-    input logic [31:0] a, input logic [31:0] b, input logic expected_carry
+  task automatic test_add_carry (
+    input logic [31:0] a,
+    input logic [31:0] b,
+    input logic expected_carry
   );
     logic [31:0] result;
-    logic        final_carry;
+    logic final_carry;
     run_op(ADD, a, b, result, final_carry);
     check("ADD", a, b, result, a + b);
     check_carry("ADD", a, b, final_carry, expected_carry);
   endtask
 
-  task automatic test_sub_carry(
-    input logic [31:0] a, input logic [31:0] b, input logic expected_carry
+  task automatic test_sub_carry (
+    input logic [31:0] a,
+    input logic [31:0] b,
+    input logic expected_carry
   );
     logic [31:0] result;
-    logic        final_carry;
+    logic final_carry;
     run_op(SUB, a, b, result, final_carry);
     check("SUB", a, b, result, a - b);
     check_carry("SUB", a, b, final_carry, expected_carry);

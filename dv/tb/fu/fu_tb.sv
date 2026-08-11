@@ -1,3 +1,17 @@
+/*
+ * Copyright 2026 Project Montreal contributors.
+ *
+ * SPDX-License-Identifier: CERN-OHL-P-2.0
+ *
+ * Project:      Montreal (RV32E SoC for Tiny Tapeout)
+ *
+ * Module:       fu_tb
+ * Tool version: Vivado 2025.2
+ * Authors:      Warrick Lo <wlo@warricklo.net>
+ *
+ * Description:  Testbench for the functional unit
+ */
+
 `timescale 1ns / 1ps
 
 `include "types.svh"
@@ -94,18 +108,18 @@ module fu_tb;
         XOR:     expected = a ^ b;
         OR:      expected = a | b;
         AND:     expected = a & b;
-        SLT:     expected = $signed(a) < $signed(b);
-        SLTU:    expected = $unsigned(a) < $unsigned(b);
-        SLL:     expected = a << b[5:0];
-        SRL:     expected = a >> b[5:0];
-        SRA:     expected = $signed(a) >>> b[5:0];
+        SLT:     expected = ($signed(a) < $signed(b)) ? 32'd1 : 32'd0;
+        SLTU:    expected = ($unsigned(a) < $unsigned(b)) ? 32'd1 : 32'd0;
+        SLL:     expected = $unsigned(a) << b[4:0];
+        SRL:     expected = $unsigned(a) >> b[4:0];
+        SRA:     expected = $signed(a) >>> b[4:0];
         default: expected = 'z;
       endcase
     end
 
     valid = '1;
 
-    @(posedge clk && ready) valid = '0;
+    @(posedge clk iff ready) valid = '0;
 
     @(posedge ready);
 
@@ -124,24 +138,7 @@ module fu_tb;
 
   endtask : check
 
-  initial begin
-
-    automatic fu_op_t alu_ops[$]   = '{ADD, SUB, XOR, OR, AND, SLT, SLTU};
-    automatic fu_op_t shift_ops[$] = '{SLL, SRL, SRA};
-
-    num = 0;
-    err = 0;
-
-    clk   = '0;
-    rst_n = '0;
-
-    @(posedge clk) @(posedge clk) rst_n = '1;
-
-    $display();
-    $display("Starting tests");
-    $display("==============");
-
-    /* Trivial and edge cases. */
+  task automatic test_add;
 
     fu_op = ADD;
 
@@ -165,6 +162,10 @@ module fu_tb;
     a = 32'h00_00_00_00;
     b = 32'h00_00_00_00;
     check(32'h00_00_00_00);
+
+  endtask : test_add
+
+  task automatic test_sub;
 
     fu_op = SUB;
 
@@ -199,6 +200,10 @@ module fu_tb;
     b = 32'h00_00_00_00;
     check(32'h00_00_00_00);
 
+  endtask : test_sub
+
+  task automatic test_xor;
+
     fu_op = XOR;
 
     /* XOR: A XOR A (results in all zeroes). */
@@ -220,6 +225,10 @@ module fu_tb;
     a = 32'ha5_a5_a5_a5;
     b = 32'hff_ff_ff_ff;
     check(32'h5a_5a_5a_5a);
+
+  endtask : test_xor
+
+  task automatic test_or;
 
     fu_op = OR;
 
@@ -248,6 +257,10 @@ module fu_tb;
     b = 32'ha5_a5_a5_a5;
     check(32'ha5_a5_a5_a5);
 
+  endtask : test_or
+
+  task automatic test_and;
+
     fu_op = AND;
 
     /* AND: all ones AND all ones (results in all ones). */
@@ -274,6 +287,10 @@ module fu_tb;
     a = 32'ha5_a5_a5_a5;
     b = 32'ha5_a5_a5_a5;
     check(32'ha5_a5_a5_a5);
+
+  endtask : test_and
+
+  task automatic test_slt;
 
     fu_op = SLT;
 
@@ -302,6 +319,10 @@ module fu_tb;
     b = 32'h00_00_00_00;
     check(32'h00_00_00_00);
 
+  endtask : test_slt
+
+  task automatic test_sltu;
+
     fu_op = SLTU;
 
     /* SLTU: minimum negative versus maximum positive, unsigned (A > B, result is 0). */
@@ -328,6 +349,35 @@ module fu_tb;
     a = 32'h00_00_00_00;
     b = 32'h00_00_00_00;
     check(32'h00_00_00_00);
+
+  endtask : test_sltu
+
+  initial begin
+
+    automatic fu_op_t alu_ops[$]   = '{ADD, SUB, XOR, OR, AND, SLT, SLTU};
+    automatic fu_op_t shift_ops[$] = '{SLL, SRL, SRA};
+
+    num = 0;
+    err = 0;
+
+    clk   = '0;
+    rst_n = '0;
+
+    @(posedge clk) @(posedge clk) rst_n = '1;
+
+    $display();
+    $display("Starting tests");
+    $display("==============");
+
+    /* Trivial and edge cases. */
+
+    test_add;
+    test_sub;
+    test_xor;
+    test_or;
+    test_and;
+    test_slt;
+    test_sltu;
 
     /* Randomised test cases. */
 

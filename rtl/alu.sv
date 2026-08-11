@@ -1,4 +1,26 @@
-/* SPDX-License-Identifier: CERN-OHL-P-2.0 */
+/*
+ * Copyright 2026 Project Montreal contributors.
+ *
+ * SPDX-License-Identifier: CERN-OHL-P-2.0
+ *
+ * Project:       Montreal (RV32E SoC for Tiny Tapeout)
+ *
+ * Module:        alu
+ * Specification: Montreal MAS, Functional Unit v0.1
+ * Version:       0.1.0
+ * Authors:       Warrick Lo <wlo@warricklo.net>
+ *                Dariell Sugiaman <dari3llsugiaman@gmail.com>
+ *
+ * Description:   Arithmetic logic unit
+ *
+ * This module implements the ALU for the functional unit (FU).
+ * Each word is processed one slice at a time (default 8 bits).
+ * Comparisons can be processed on the last cycle with the carry-out.
+ *
+ * This module assumes that the control signals are all stable until
+ * the entire word is finished processing. It also assumes that cycle_i
+ * increments by 1, starting at 0.
+ */
 
 `include "types.svh"
 
@@ -51,14 +73,15 @@ module alu #(
   always_comb begin : alu_core
     unique casez (alu_op_i[2:0])
       /* ADD, SUB, SLT, SLTU. */
-      3'b0??: result_o = adder_result[SLICE_WIDTH-1:0];
+      3'b0??:  result_o = adder_result[SLICE_WIDTH-1:0];
       /* XOR. */
-      3'b100: result_o = a_i ^ b_i;
+      3'b100:  result_o = a_i ^ b_i;
       /* OR. */
-      3'b110: result_o = a_i | b_i;
+      3'b110:  result_o = a_i | b_i;
       /* AND. */
-      3'b111: result_o = a_i & b_i;
-      default: result_o = '0;
+      3'b111:  result_o = a_i & b_i;
+      /* Default case. */
+      default: result_o = 'x;
     endcase
   end : alu_core
 

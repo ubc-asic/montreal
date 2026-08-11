@@ -1,5 +1,19 @@
 `timescale 1ns / 1ps
 
+/*
+ * Copyright 2026 Project Montreal contributors.
+ *
+ * SPDX-License-Identifier: CERN-OHL-P-2.0
+ *
+ * Project:      Montreal (RV32E SoC for Tiny Tapeout)
+ *
+ * Module:       shifter_tb
+ * Tool version: Vivado 2025.2
+ * Authors:      Warrick Lo <wlo@warricklo.net>
+ *
+ * Description:  Testbench for the shifter
+ */
+
 `include "types.svh"
 
 module shifter_tb;
@@ -68,12 +82,12 @@ module shifter_tb;
       SLL: begin
         shift_type       = '0;
         shift_arithmetic = '0;
-        expected         = in << shamt;
+        expected         = $unsigned(in) << shamt;
       end
       SRL: begin
         shift_type       = '1;
         shift_arithmetic = '0;
-        expected         = in >> shamt;
+        expected         = $unsigned(in) >> shamt;
       end
       SRA: begin
         shift_type       = '1;

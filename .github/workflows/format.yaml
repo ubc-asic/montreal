@@ -12,4 +12,9 @@ jobs:
     - uses: actions/checkout@master
     - uses: chipsalliance/verible-formatter-action@main
       with:
+        parameters:
+          --formal_parameters_indentation indent
+          --port_declarations_indentation indent
+          --named_parameter_indentation indent
+          --named_port_indentation indent
         github_token: ${{ secrets.GITHUB_TOKEN }}

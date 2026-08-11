@@ -1,11 +1,16 @@
-/* SPDX-License-Identifier: CERN-OHL-P-2.0 */
-
 /*
- * Copyright 2026 UBC ASIC contributors (Montreal project).
+ * Copyright 2026 Project Montreal contributors.
  *
- * Author: Warrick Lo <wlo@warricklo.net>
+ * SPDX-License-Identifier: CERN-OHL-P-2.0
  *
- * Functional unit
+ * Project:       Montreal (RV32E SoC for Tiny Tapeout)
+ *
+ * Module:        fu
+ * Specification: Montreal MAS, Functional Unit v0.1
+ * Version:       0.1.0
+ * Authors:       Warrick Lo <wlo@warricklo.net>
+ *
+ * Description:   Functional unit
  *
  * This module implements the functional unit (FU). The FU drives
  * the ALU and shifter modules, each of which processes the word
@@ -66,7 +71,7 @@ module fu #(
 
     .cycle_i,
 
-     /* Use fu_op_d here (see above). */
+    /* Use fu_op_d here (see above). */
     .alu_op_i(fu_op_d),
 
     .a_i,
@@ -155,13 +160,15 @@ module fu #(
           rslice_o = 3;
           wslice_o = 0;
           if (fu_op_d == SLTU) begin
-            result_o = {(SLICE_WIDTH-1)'('0), ~alu_carry};
+            result_o = {(SLICE_WIDTH - 1)'('0), ~alu_carry};
           end else begin
             /* Check if A is positive and B is negative. Otherwise, if
              * both are the same sign, use the same result as SLTU. */
-            result_o = {(SLICE_WIDTH-1)'('0),
-                (a_i[SLICE_WIDTH-1] & ~b_i[SLICE_WIDTH-1])
-                | (~(a_i[SLICE_WIDTH-1] ^ b_i[SLICE_WIDTH-1]) & ~alu_carry)};
+            result_o = {
+              (SLICE_WIDTH - 1)'('0),
+              (a_i[SLICE_WIDTH-1] & ~b_i[SLICE_WIDTH-1])
+                  | (~(a_i[SLICE_WIDTH-1] ^ b_i[SLICE_WIDTH-1]) & ~alu_carry)
+            };
           end
         end else begin
           rslice_o = cycle_i;
