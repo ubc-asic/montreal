@@ -1,0 +1,19 @@
+site:
+  title: "Montréal :: Project Documentation"
+  url: https://ubc-asic.github.io/montreal
+  start_page: ROOT::index.adoc
+content:
+  sources:
+  - url: .
+    start_path: .
+ui:
+  bundle:
+    url: https://gitlab.com/antora/antora-ui-default/-/jobs/artifacts/HEAD/raw/build/ui-bundle.zip?job=bundle-stable
+    snapshot: true
+  supplemental_files: ./ui/supplemental_ui
+asciidoc:
+  attributes:
+    stem: latexmath
+  extensions:
+  - asciidoctor-katex
+  - asciidoctor-kroki

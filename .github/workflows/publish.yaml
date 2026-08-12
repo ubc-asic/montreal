@@ -1,0 +1,41 @@
+name: Publish to GitHub Pages
+on:
+  push:
+    branches: [docs]
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v5
+    - name: Configure Pages
+      uses: actions/configure-pages@v5
+    - name: Install Node.js
+      uses: actions/setup-node@v5
+      with:
+        node-version: '18'
+    - name: Install Antora
+      run: npm install antora
+    - name: Install AsciiDoctor extensions
+      run: |
+        npm install asciidoctor-katex@0.4.1
+        npm install asciidoctor-kroki@0.15.4
+    - name: Generate Site
+      run: npx antora antora-playbook.yaml
+    - name: Upload Artifacts
+      uses: actions/upload-pages-artifact@v4
+      with:
+        path: build/site
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4
