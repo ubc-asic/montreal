@@ -1,0 +1,335 @@
+Register File
+=============
+:revnumber: 0.2-draft.1
+:revdate: 2026-06-13
+:numbered:
+
+[cols="h,5"]
+|===
+| IP Name
+| `regfile`
+
+| File
+| `rtl/regfile.sv`
+
+| Version
+| 0.2.0
+
+| Project
+| UBC ASIC / Montréal Project
+
+| Engineer
+| Warrick Lo -- wlo@warricklo.net
+
+| Licence
+| CERN Open Hardware Licence Version 2 -- Permissive (CERN-OHL-P-2.0)
+|===
+
+[cols="1,1,1,1,4", options="header"]
+|===
+| Version
+| Date
+| Author(s)
+| Reviewer(s)
+| Comments
+
+| 0.1
+| 2026-05-22
+| Warrick Lo
+| --
+| Initial draft.
+
+| 0.2-draft.1
+| 2026-06-13
+| Warrick Lo
+| --
+| Added synchronous reset. +
+Removed requirement for storing zero in register 0 (section 6).
+|===
+
+Terminology
+-----------
+
+The key words "*MUST*", "*MUST NOT*", "*REQUIRED*", "*SHALL*", "*SHALL NOT*",
+"*SHOULD*", "*SHOULD NOT*", "*RECOMMENDED*", "*NOT RECOMMENDED*", "*MAY*",
+and "*OPTIONAL*" in this document are to be interpreted as described in
+https://rfc-editor.org/info/bcp14[BCP 14]
+{blank}[https://doi.org/10.17487/RFC2119[RFC2119]]
+{blank}[https://doi.org/10.17487/RFC8174[RFC8174]]
+when, and only when, they appear in all capitals, as shown here.
+
+IP Overview
+-----------
+
+A register file design for a RISC-V core. Each word is divided into fixed-width
+chunks. A global chunk selector is used to restrict all read and write operations
+to one chunk at a time. Register 0 is hard-wired to zero on all read ports to
+follow the RISC-V specification. One synchronous write port and a configurable
+number of combinational read ports are provided.
+
+Parameters
+----------
+
+.Parameters.
+[cols="2,1,1,3"]
+|===
+| Parameter | Type | Default | Description
+
+| `WORD_WIDTH`
+|`int unsigned`
+| 32
+| Full width of each register in bits.
+
+| `CHUNK_WIDTH`
+| `int unsigned`
+| 8
+| Width of one access chunk in bits.
+
+| `ADDR_WIDTH`
+| `int unsigned`
+| 4
+| Address width; gives stem:[2^\texttt{ADDR\_WIDTH}] words.
+
+| `NUM_READ_PORTS`
+| `int unsigned`
+| 2
+| Number of independent combinational read ports.
+|===
+
+.Local parameters.
+[cols="2,2,3,1,3"]
+|===
+| Parameter | Type | Expression | Default | Description
+
+| `NUM_WORDS`
+| `int unsigned`
+| stem:[2^\texttt{ADDR\_WIDTH}]
+| 16
+| Total number of registers.
+
+| `NUM_CHUNKS`
+| `int unsigned`
+| stem:[\texttt{WORD\_WIDTH}/\texttt{CHUNK\_WIDTH}]
+| 4
+| Chunks per word.
+|===
+
+Interface Specification
+-----------------------
+
+=== Types
+
+Not applicable.
+
+=== Ports
+
+.Port table.
+[cols="1,1,1,2"]
+|===
+| Port Name | Direction | Width | Description
+
+| `clk_i`
+| input
+| 1
+| Rising-edge write clock.
+
+| `rst_ni`
+| input
+| 1
+| Active-low synchronous reset.
+
+| `chunk_sel_i`
+| input
+| stem:[\lceil\log_2{(\texttt{NUM\_CHUNKS})}\rceil]
+| Selects which chunk is accessed this cycle.
+
+| `raddr_i[i]`
+| input
+| `ADDR_WIDTH`
+| Read address for port stem:[i].
+
+| `rdata_o[i]`
+| output
+| `CHUNK_WIDTH`
+| Read data for port stem:[i] (one chunk).
+
+| `wen_i`
+| input
+| 1
+| Synchronous write enable.
+
+| `waddr_i`
+| input
+| `ADDR_WIDTH`
+| Write address.
+
+| `wdata_i`
+| input
+| `CHUNK_WIDTH`
+| Write data (one chunk).
+|===
+
+Design Constraints
+------------------
+
+[cols="1,4"]
+|===
+| Constraint ID | Description
+
+| `DC-REGFILE-010`
+| `WORD_WIDTH` *MUST* be a positive integer multiple of `CHUNK_WIDTH`.
+
+| `DC-REGFILE-020`
+| `ADDR_WIDTH` *MUST* be a positive integer.
+
+| `DC-REGFILE-030`
+| `NUM_READ_PORTS` *MUST* be a positive integer.
+|===
+
+Design Requirements
+-------------------
+
+[cols="1,4"]
+|===
+| Requirement ID | Description
+
+| `DR-REGFILE-010`
+| The module *MUST* store stem:[\texttt{NUM\_WORDS} - 1] words,
+each `WORD_WIDTH` bits wide.
+
+| `DR-REGFILE-020`
+| Chunk stem:[k] of word stem:[n] *SHALL* correspond to bits
+stem:[[(k+1) \cdot \texttt{CHUNK\_WIDTH} - 1 : k \cdot \texttt{CHUNK\_WIDTH}]]
+of register stem:[n], partitioning each word into `NUM_CHUNKS` non-overlapping
+chunks each `CHUNK_WIDTH` bits wide.
+
+| `DR-REGFILE-030`
+| Register contents *MUST* be zero at most one clock cycle after the synchronous
+reset (`rst_ni`) is asserted.
+
+| `DR-REGFILE-040`
+| Writes to the register file *MUST* only occur on the rising edge of `clk_i`.
+
+| `DR-REGFILE-041`
+| Writes to the register file *MUST* only occur when `wen_i` is asserted.
+
+| `DR-REGFILE-042`
+| Contents of `wdata_i` *MUST* be written only to the chunk selected by
+`chunk_sel_i` within the register selected by `waddr_i`. All other chunks of
+the target register *SHALL* remain unchanged.
+
+| `DR-REGFILE-043`
+| Writes to register 0 *SHALL* be silently ignored, regardless of the state of
+`wen_i`.
+
+| `DR-REGFILE-050`
+| The read output `rdata_o[i]` *SHALL* be combinationally derived from the
+current register state, `raddr_i[i]`, and `chunk_sel_i`. There *SHALL NOT* be
+any latency on reads.
+
+| `DR-REGFILE-051`
+| The read output `rdata_o[i]` *MUST* reflect the chunk selected by `chunk_sel_i`
+within the register selected by `raddr_i[i]`.
+
+| `DR-REGFILE-052`
+| The read output `rdata_o[i]` *MUST* be zero when `raddr_i[i]` is zero,
+regardless of any prior writes to register 0.
+
+| `DR-REGFILE-053`
+| Requirement `DR-REGFILE-052` *SHALL* be unconditional: it *MUST* hold at
+power-on without reset having been asserted, and at all times during normal
+operation.
+
+| `DR-REGFILE-060`
+| The module *SHALL NOT* implement any bypass logic. A read and write to the same
+address in the same cycle *SHALL* return the value held in the register prior to
+the rising clock edge of the current cycle.
+|===
+
+Timing
+------
+
+[cols="1,2"]
+|===
+| Operation | Latency
+
+| Read
+| 0 cycles (combinational)
+
+| Reset visible on read port
+| 1 cycle
+
+| Write visible on read port
+| 1 cycle
+
+| Same address back-to-back writes
+| Safe
+|===
+
+Architecture
+------------
+
+The module is composed of a flop array, a combinational read network, and a clocked write port.
+
+=== Storage
+
+The register array is declared as a packed 2D structure:
+
+[source]
+----
+logic [NUM_WORDS-1:1][WORD_WIDTH-1:0]
+----
+
+By default, this will be a stem:[15 \times 32] bit array.
+
+=== Chunk Addressing
+
+The active chunk within a word is addressed by `chunk_sel_i` using a part-select:
+
+[source]
+----
+register[addr][chunk_sel_i * CHUNK_WIDTH +: CHUNK_WIDTH]
+----
+
+The input `chunk_sel_i` is a global selector; the write port and all read ports
+will share the same active chunk.
+
+=== Read Ports
+
+The reads are all combinational. For a read port stem:[i]:
+
+[stem]
+++++
+\texttt{rdata\_o}[i] =
+\begin{cases}
+	0 & \text{if} \; \texttt{raddr\_i}[i] = 0, \\
+	\texttt{register}[\texttt{raddr\_i}[i]][\text{chunk}] & \text{otherwise}.
+\end{cases}
+++++
+
+There is no read-after-write forwarding; a write is not visible on a read port
+until the next cycle.
+
+=== Write Port
+
+Write to the registers are clocked on the rising edge of `clk_i`.
+Both of the following conditions must be satisfied for a write to occur:
+
+. `wen_i` is asserted; and
+. `waddr_i` is not zero, as register 0 is write-protected.
+
+=== Implementation Notes
+
+The following documents implementation decisions, including intentional deviations
+from standard practice and known limitations.
+
+* The register file is implemented with a chunk selector to match the width of
+the datapath design.
+
+* There are no assertions to guard the `WORD_WIDTH % CHUNK_WIDTH == 0` constraint;
+violating it will leave the top bits of each word unreachable.
+
+* The write block contains a `dff-name-style` waiver to suppress a
+naming convention warning from the `verible-verilog-lint` linter; the decision
+was to have the array named `register`, which deviates from the project's
+style guidelines.

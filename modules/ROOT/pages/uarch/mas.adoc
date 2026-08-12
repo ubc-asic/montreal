@@ -1,0 +1,445 @@
+Microarchitecture Specification (MAS)
+=====================================
+:revnumber: 0.1-draft.1
+:numbered:
+
+[cols="h,5"]
+|===
+| Project
+| RV32E Multicycle/Pipelined CPU
+
+| Internal Name
+| Montreal
+
+| Target
+| TinyTapeout
+
+| Verification
+| UVM + Formal
+
+| Revision
+| 0.1-draft.1
+
+| Status
+| Work in Progress
+|===
+
+Introduction
+------------
+
+This document describes the microarchitecture of a RISC-V RV32E
+processor targeting the https://tinytapeout.com/[TinyTapeout] shuttle.
+The design implements the RISC-V base integer ISA in its embedded
+variant (RV32E), with 16 general-purpose registers and a 32-bit data
+path.
+
+The processor is a multicycle/pipelined implementation using a modified
+Harvard memory architecture. Instruction memory (IMEM) is fetched from
+an external QSPI flash device connected via the
+https://store.tinytapeout.com/products/QSPI-Pmod-p716541602[QSPI PMOD].
+Data memory (DMEM) is a small on-chip SRAM.
+
+*ISA:* RV32E (RV32I base, 16 registers) +
+*Pipeline depth:*
+
+=== Block Diagram
+
+Interfaces
+----------
+
+TinyTapeout exposes a fixed port list. This section maps the CPU’s
+logical signals to the physical TinyTapeout pins and documents their
+electrical and timing properties.
+
+Signal names follow the pattern: +
+*Ref Name* = logical name used inside the RTL; +
+*Instantiated Name* = name as wired at `tb.dut` (TinyTapeout wrapper).
+
+=== Clock Signals
+
+[cols="1,1,1,1,1,1", options="header"]
+|===
+|Ref Signal Name |Instantiated Name |Direction |Type |Driving Edge
+|Description
+| | | | | |
+|===
+
+=== Reset Signals
+
+[cols="1,1,1,1,1,1", options="header"]
+|===
+|Ref Signal Name |Instantiated Name |Direction |Type |Assert Level
+|Deassertion Edge |Description
+| | | | | | |
+|===
+
+=== Other Signals
+
+The table below covers all remaining interface signals. TinyTapeout
+provides 8 dedicated input bits (`ui_in[7:0]`), 8 bidirectional bits
+(`uio[7:0]`), 8 dedicated output bits (`uo_out[7:0]`), and miscellaneous
+control lines.
+
+[cols="2,2,1,1,1,8", options="header"]
+|===
+|Ref Signal Name |Instantiated Name |Direction |Width |Reset Value
+|Description
+|`qspi_sck` | |Output |1 |`0` |QSPI serial clock to flash. Derived from
+`clk` via clock-enable gating (not a separate clock domain).
+
+|`qspi_cs_n` | |Output |1 |`1` |QSPI chip-select, active-low. Held high
+during reset and idle.
+
+|`qspi_io[0]` | |Bidir |1 |`Z` |QSPI data line 0 (MOSI in SPI mode, IO0
+in quad mode).
+
+|`qspi_io[1]` | |Bidir |1 |`Z` |QSPI data line 1 (MISO in SPI mode, IO1
+in quad mode).
+
+|`qspi_io[2]` | |Bidir |1 |`Z` |QSPI data line 2 (IO2 / WP# in quad
+mode).
+
+|`qspi_io[3]` | |Bidir |1 |`Z` |QSPI data line 3 (IO3 / HOLD# in quad
+mode).
+
+|`uio_oe[3:0]` | |Output |4 |`4'b0000` |Output-enable for QSPI bidir
+lines. Driven high when transmitting (command/address phases), low
+during read data phase.
+
+|`dbg_tx` | |Output |1 |`1` |Debug UART TX (115200 8N1, optional).
+Reserved; tied high if unused.
+
+|`halt` | |Output |1 |`0` |Asserted when the CPU has executed an
+`EBREAK` or entered an unrecoverable fault state.
+
+|`spare_in[3:0]` | |Input |4 |— |Spare inputs. Reserved for future use
+(boot mode select, debug straps). Internally pulled to logic 0.
+|===
+
+*QSPI PMOD pinout:* The QSPI PMOD is connected to the `uio` bidir port.
+Verify PMOD connector orientation against TinyTapeout carrier board
+schematic before tapeout. `uio[4:7]` are currently unallocated.
+
+Requirements
+------------
+
+=== Functional Requirements
+
+==== Reset and Initialization
+
+[cols="1,4", options="header"]
+|===
+|ID |Requirement
+|`FR-MONTREAL-001` |The design shall support asynchronous assert and synchronous
+deassertion of `rst_n`.
+
+|`FR-MONTREAL-002` |On deassertion of `rst_n`, the program counter (`PC`) shall
+be initialized to the boot address `0x0000_0000`.
+
+|`FR-MONTREAL-003` |All 16 general-purpose registers shall have an
+architecturally undefined reset value. The register file need not be
+reset.
+
+|`FR-MONTREAL-004` |The QSPI controller shall hold `qspi_cs_n` high and all
+`qspi_io` lines in high-impedance during reset assertion.
+
+|`FR-MONTREAL-005` |The `halt` output shall be deasserted (`0`) on reset
+deassertion.
+|===
+
+==== Clocking
+
+[cols="1,4", options="header"]
+|===
+|ID |Requirement
+|`FR-MONTREAL-010` |The design shall operate from a single synchronous clock
+domain (`clk`).
+
+|`FR-MONTREAL-011` |No combinational paths shall exist between `clk` and any
+registered output.
+
+|`FR-MONTREAL-012` |The QSPI serial clock (`qspi_sck`) shall be derived from
+`clk` using a clock-enable scheme, not a divided clock signal, to remain
+in the same clock domain.
+|===
+
+==== ISA and Instruction Set
+
+[cols="1,4", options="header"]
+|===
+|ID |Requirement
+|`FR-MONTREAL-020` |The processor shall implement the full RV32E base integer ISA
+(32-bit instructions, 16 registers x0–x15).
+
+|`FR-MONTREAL-021` |The processor shall correctly handle `EBREAK` by asserting
+`halt` and stalling indefinitely.
+
+|`FR-MONTREAL-022` |Misaligned instruction fetch (PC not 4-byte aligned) shall
+result in a detectable fault condition. Behavior TBD (stall / halt).
+
+|`FR-MONTREAL-023` |The processor shall implement load/store byte (`LB`, `LBU`,
+`SB`), halfword (`LH`, `LHU`, `SH`), and word (`LW`, `SW`) accesses.
+|===
+
+==== Memory
+
+[cols="1,4", options="header"]
+|===
+|ID |Requirement
+|`FR-MONTREAL-030` |Instruction fetches shall be served exclusively from the QSPI
+flash via the QSPI controller. No instruction cache is required for
+v0.1.
+
+|`FR-MONTREAL-031` |Data memory accesses (load/store) shall target the on-chip
+SRAM only. No data cache is required.
+
+|`FR-MONTREAL-032` |The DMEM address space shall be separate from the IMEM
+address space (modified Harvard architecture).
+
+|`FR-MONTREAL-033` |DMEM size shall be determined by area budget (see §3.3).
+|===
+
+==== General Integration
+
+[cols="1,4", options="header"]
+|===
+|ID |Requirement
+|`FR-MONTREAL-040` |The design shall fit within the TinyTapeout tile boundary
+without modifications to the carrier board.
+
+|`FR-MONTREAL-041` |The top-level module shall be named `tt_um_rv32e_cpu` and
+shall expose the standard TinyTapeout port list.
+
+|`FR-MONTREAL-042` |The design shall be simulation-clean (no X-propagation from
+reset state on controlled signals) within 2 clock cycles of `rst_n`
+deassertion.
+|===
+
+=== Performance Requirements
+
+[cols=",,,",options="header",]
+|===
+|ID |Parameter |Target |Notes
+| | | |
+| | | |
+|===
+
+=== Area Requirements
+
+TinyTapeout provides approximately *1000 standard cell equivalents
+(SCEs)* per tile (exact figure depends on process and shuttle). The
+baseline allocation is:
+
+[cols=",,",options="header",]
+|===
+|Block |Estimated Area (SCE) |Notes
+| | |
+| | |
+| | |
+|===
+
+Design Details
+--------------
+
+=== Pipeline Architecture
+
+The processor uses a x stage pipeline…
+
+[cols=",,",options="header",]
+|===
+|Stage |Name |Description
+| | |
+| | |
+| | |
+| | |
+|===
+
+*Hazard handling:*
+
+=== Datapath
+
+The datapath implements:
+
+=== Control Unit
+
+The control unit is a combinational decode block (not a sequential FSM
+for in-order instructions) that generates the following control signals
+from the instruction word:
+
+[cols=",,",options="header",]
+|===
+|Signal |Width |Description
+| | |
+| | |
+| | |
+| | |
+|===
+
+=== Memory Architecture
+
+==== IMEM (QSPI Flash — External)
+
+==== DMEM (On-Chip SRAM — Internal)
+
+=== QSPI Interface
+
+*Controller state machine:*
+
+=== Boot Sequence
+
+Registers
+---------
+
+=== Register File
+
+The RV32E register file contains *16 × 32-bit* general-purpose
+registers, `x0`–`x15`. Register `x0` is hardwired to zero.
+
+[cols=",,",options="header",]
+|===
+|Register |ABI Name |Role (RISC-V calling convention)
+|x0 |zero |
+|x1 | |
+|x2 | |
+|x3 | |
+|x4 | |
+|x5 | |
+|x6 | |
+|x7 | |
+|x8 | |
+|x9 | |
+|x10 | |
+|x11 | |
+|x12 | |
+|x13 | |
+|x14 | |
+|x15 | |
+|===
+
+*Implementation notes:*
+
+* Implemented as a synchronous flop array (not a latch-based or SRAM
+macro). Two read ports (for rs1, rs2), one write port (WB stage).
+* Register file is *not reset* on `rst_n`. x0 zero behavior is enforced
+by gating the write enable and tying the read data to zero in RTL, not
+by resetting flops.
+* Write occurs on the rising edge of `clk` in the WB stage. Reads are
+combinational (asynchronous).
+
+=== Internal Pipeline Registers
+
+Each pipeline stage boundary has a set of registered fields. The table
+below lists the key fields carried in each inter-stage register. All
+pipeline registers are reset to a safe ``NOP bubble'' state on `rst_n`
+assertion or pipeline flush.
+
+==== IF/ID Register
+
+[cols=",,,",options="header",]
+|===
+|Field |Width |Reset Value |Description
+|`instr` |32 | |
+| | | |
+| | | |
+|===
+
+==== ID/EX Register
+
+[cols=",,,",options="header",]
+|===
+|Field |Width |Reset Value |Description
+|===
+
+==== EX/MEM Register
+
+[cols=",,,",options="header",]
+|===
+|Field |Width |Reset Value |Description
+|===
+
+==== MEM/WB Register
+
+[cols=",,,",options="header",]
+|===
+|Field |Width |Reset Value |Description
+|===
+
+Verification Plan
+-----------------
+
+=== UVM Testbench
+
+The verification environment follows the
+https://github.com/lowRISC/style-guides/blob/master/DVCodingStyle.md[lowRISC DV Coding Style Guide] and UVM methodology.
+
+*Top-level structure (`rv32e_cpu/dv/`):*
+
+....
+verif/uvm/
+  env/
+    rv32e_env.sv
+    rv32e_env_pkg.sv
+    rv32e_env_cfg.sv
+    rv32e_env_cov.sv
+    rv32e_scoreboard.sv
+    rv32e_virtual_sequencer.sv
+    seq_lib/
+      rv32e_base_vseq.sv
+      rv32e_sanity_vseq.sv
+      rv32e_isa_vseq.sv       // Full ISA directed + random
+      rv32e_mem_stress_vseq.sv
+  tb/
+    tb.sv
+  tests/
+    rv32e_base_test.sv
+    rv32e_test_pkg.sv
+....
+
+*Agents required:*
+
+[cols="1,1,1,3", options="header"]
+|===
+|Agent |Interface |Mode |Notes
+|`qspi_agent` |QSPI PMOD |Device |Flash model; responds to read commands
+with pre-loaded binary.
+
+|`cpu_dbg_agent` |Debug UART / halt |Monitor |Observes halt, dbg_tx.
+|===
+
+*Scoreboard:* The reference model is a simple instruction-set simulator
+(ISS) — either a C model via DPI or a SV behavioral model — that
+executes the same instruction stream and compares register file state
+and memory writes at each writeback event.
+
+=== Formal Verification Targets
+
+Formal verification (SymbiYosys) will be used for the following modules:
+
+[cols="1,1", options="header"]
+|===
+|Module |Properties to verify
+|`alu` |Arithmetic correctness for all opcodes; no X-propagation.
+
+|`imm_gen` |Correct immediate extraction for all RV32E formats
+(I/S/B/U/J).
+
+|`forwarding_unit` |Correct forwarding source selected for all RAW
+hazard cases.
+
+|`hazard_unit` |Stall and flush asserted/deasserted correctly for
+load-use and branch hazards.
+
+|`qspi_controller` |Protocol correctness: CS/SCK/IO timing
+relationships; no SCK glitches.
+
+|`rv32e_cpu` (top) |RISCV-Formal interface properties (`rvfi_*`) — TBD
+if time permits.
+|===
+
+Open Questions
+--------------
+
+[cols=",,",options="header",]
+|===
+|ID |Question |Owner
+|===
