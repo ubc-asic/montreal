@@ -1,0 +1,323 @@
+Functional Unit
+===============
+:revnumber: 0.1-draft.2
+:revdate: 2026-08-13
+:numbered:
+
+[cols="h,5"]
+|===
+| IP Name
+| `fu`
+
+| File
+| `rtl/fu.sv`
+
+| Version
+| 0.1.0
+
+| Project
+| UBC ASIC / Montréal Project
+
+| Engineer
+| Warrick Lo -- wlo@warricklo.net
+
+| Licence
+| CERN Open Hardware Licence Version 2 -- Permissive (CERN-OHL-P-2.0)
+|===
+
+[cols="1,1,1,1,4", options="header"]
+|===
+| Version
+| Date
+| Author(s)
+| Reviewer(s)
+| Comments
+
+| 0.1-draft.2
+| 2026-08-13
+| Warrick Lo
+| --
+| Initial draft.
+|===
+
+Terminology
+-----------
+
+The key words "*MUST*", "*MUST NOT*", "*REQUIRED*", "*SHALL*", "*SHALL NOT*",
+"*SHOULD*", "*SHOULD NOT*", "*RECOMMENDED*", "*NOT RECOMMENDED*", "*MAY*",
+and "*OPTIONAL*" in this document are to be interpreted as described in
+https://rfc-editor.org/info/bcp14[BCP 14]
+{blank}[https://doi.org/10.17487/RFC2119[RFC2119]]
+{blank}[https://doi.org/10.17487/RFC8174[RFC8174]]
+when, and only when, they appear in all capitals, as shown here.
+
+The term "slice" *SHALL* refer to a fixed-width, non-overlapping portion of
+a word, `SLICE_WIDTH` bits wide. A word is divided into `NUM_SLICES` slices.
+The exact bit range for a slice *SHALL* be interpreted as described in
+requirement `REQ-REGFILE-020`.
+
+The "acceptance" of a particular operation *SHALL* refer to the clock cycle
+where the handshake is successful, namely when both `valid_i` and `ready_o`
+are asserted.
+
+The "completion" of a particular operation *SHALL* refer to the clock cycle,
+following the acceptance of a given operation, on which `ready_o` is reasserted.
+
+The term "operation" *SHALL* refer to one full execution of `fu_op_i`,
+from acceptance to completion, as defined above.
+
+The term "cycle" is not to be confused with the counter value `cycle_i`.
+
+IP Overview
+-----------
+
+A slice-serial functional unit (FU) for a RISC-V core, operating on one slice
+of each operand per cycle. The module accepts an operation over a ready/valid
+handshake, processes it over multiple cycles as driven by an externally
+supplied cycle count, and writes the result back to the register file
+by driving that register file's write port control signals.
+
+
+Parameters
+----------
+
+.Parameters.
+[cols="2,1,1,3"]
+|===
+| Parameter | Type | Default | Description
+
+| `XLEN`
+|`int unsigned`
+| 32
+| Full width of each register in bits.
+
+| `SLICE_WIDTH`
+| `int unsigned`
+| 8
+| Width of one access slice in bits.
+|===
+
+.Local parameters.
+[cols="2,2,3,1,3"]
+|===
+| Parameter | Type | Expression | Default | Description
+
+| `SLICE_COUNT`
+| `int unsigned`
+| stem:[\texttt{XLEN}/\texttt{SLICE\_WIDTH}]
+| 4
+| Slices per word.
+
+| `SLICE_ADDR_WIDTH`
+| `int unsigned`
+| stem:[\lceil\log_2{(\texttt{SLICE\_COUNT})}\rceil]
+| 2
+| Bits needed to address one slice.
+|===
+
+Interface Specification
+-----------------------
+
+=== Types
+
+.Types.
+[cols="1,2,3"]
+|===
+| Type | Definition | Description
+
+| `slice_t`
+| `logic [SLICE_WIDTH-1:0]`
+| One operand or result slice.
+
+| `fu_op_t`
+| As defined in `types.svh`.
+| Selects the operation performed on `a_i` and `b_i`.
+|===
+
+=== Ports
+
+.Port table.
+[cols="1,1,1,2"]
+|===
+| Port Name | Direction | Width | Description
+
+| `clk_i`
+| input
+| 1
+| Rising-edge write clock.
+
+| `rst_ni`
+| input
+| 1
+| Active-low synchronous reset.
+
+| `valid_i`
+| input
+| 1
+| Asserted by the requester to present a new operation.
+
+| `ready_o`
+| output
+| 1
+| Asserted when the module is idle and is able to accept a new operation
+from the requester. Will be asserted for at least one cycle when an
+operation is completed.
+
+| `cycle_i`
+| input
+| stem:[\texttt{SLICE\_ADDR\_WIDTH} + 1]
+| Not to be confused with the "cycle" of `clk_i`. Externally driven
+cycle counter for the operation in progress. Sized with one extra bit
+as various operations require extra cycles for fetching and/or writeback.
+
+| `fu_op_i`
+| input
+| `fu_op_t`
+| Selects the FU operation. Sampled on acceptance.
+
+| `a_i`
+| input
+| `slice_t`
+| Operand A slice for the current cycle.
+
+| `b_i`
+| input
+| `slice_t`
+| Operand B slice for the current cycle.
+
+| `result_o`
+| output
+| `slice_t`
+| Result slice for the current cycle.
+
+| `rslice_o`
+| output
+| `SLICE_ADDR_WIDTH`
+| Selects which slice is read this cycle. Drives the register file's
+read slice selector.
+
+| `wslice_o`
+| output
+| `SLICE_ADDR_WIDTH`
+| Selects which slice is written to this cycle. Drives the register file's
+write slice selector.
+|===
+
+Design Constraints
+------------------
+
+[cols="1,4"]
+|===
+| Constraint ID | Description
+
+| `CON-FU-010`
+| The maximum number of cycles from acceptance to completion of any operation,
+for any valid value of `fu_op_i`, *MUST NOT* exceed 8.
+|===
+
+Design Requirements
+-------------------
+
+[cols="1,4"]
+|===
+| Requirement ID | Description
+
+| `REQ-FU-010`
+| An operation *SHALL* be accepted on any rising edge of `clk_i` where
+`valid_i` and `ready_o` are both asserted. The operation code `fu_op_i`
+*MUST* be sampled on this edge.
+
+| `REQ-FU-011`
+| The cycle count `cycle_i` *MUST* be driven by the requester on the cycle
+immediately following an acceptance, and *MUST* increase by exactly 1 on
+each subsequent cycle for the duration of the operation.
+
+| `REQ-FU-012`
+| The module *SHALL NOT* rely on any internal counter. Sequencing of an
+operation *MUST* be derived from `cycle_i`.
+
+| `REQ-FU-013`
+| The ready signal `ready_o` *MUST* be deasserted no later than the cycle
+after acceptance, and *MUST* remain deasserted for the entire duration
+of an operation.
+
+| `REQ-FU-014`
+| The ready signal `ready_o` *MUST* be reasserted on the cycle the operation
+finishes processing.
+
+| `REQ-FU-015`
+| The result slice `result_o` and writeback signals `wslice_o` *MUST* be valid
+when `ready_o` is reasserted to signal the conclusion of the operation.
+
+| `REQ-FU-016`
+| The module *MUST* be able to accept a new operation immediately after
+reasserting `ready_o`.
+
+| `REQ-FU-020`
+| The slice selector `rslice_o` *MUST*, on each cycle of an operation
+during which a source slice is fetched, select the source slice
+required by `fu_op_i` for that cycle.
+
+| `REQ-FU-021`
+| The slice selector `wslice_o` *MUST*, on each cycle of an operation
+during which a result slice is written back, select the destination
+slice corresponding to `result_o` for that cycle.
+
+| `REQ-FU-030`
+| For each valid value of the operation code `fu_op_i`, the sequence of result
+slices `result_o` produced over an operation *MUST* correspond to the result
+as defined for that operation code.
+|===
+
+Timing
+------
+
+[cols="1,2"]
+|===
+| Operation | Latency
+
+| Acceptance to stem:[\texttt{cycle\_i} = 0]
+| 1 cycle
+
+| Acceptance to completion
+| 1--8 cycles, dependent on `fu_op_i`
+
+| Back-to-back operations
+| Safe; a new operation may be accepted on the cycle immediately
+following completion
+|===
+
+Architecture
+------------
+
+The module is a slice-serial functional unit sequenced externally by `cycle_i`
+rather than by an internal counter. Upon acceptance, it latches `fu_op_i`.
+The operand slices `a_i` and `b_i` are fetched one cycle per slice as `cycle_i`
+advances and handled by `rslice_o`. The result slice `result_o` and the
+write slice select `wslice_o` correspond to the result of the operation.
+
+=== Cycle Sequencing
+
+Because `cycle_i` is driven by the requester, the module decodes `fu_op_i`
+to determine sequencing of the operation.
+
+== Implementation Notes
+
+The following documents implementation decisions, including intentional
+deviations from standard practice and known limitations.
+
+* Writebacks assume that the result slice `result_o` is either valid, or will
+be overwritten afterwards during the same operation.
+
+* Shift operations will not work properly when the source operand and
+destination point to the same register.
+
+The following lists the open items that will be resolved in a future revision:
+
+* To support shift operations with the same source and destination register
+(see above), a future revision shall sequence through each slice twice during
+a shift: the first for fetching and processing; and the second time for
+writeback.
+
+* Support for the Zicond extension operations `CZERO.EQZ` and `CZERO.NEQ`
+is planned.

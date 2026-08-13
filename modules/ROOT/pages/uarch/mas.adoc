@@ -12,7 +12,7 @@ Microarchitecture Specification (MAS)
 | Montreal
 
 | Target
-| TinyTapeout
+| Tiny Tapeout
 
 | Verification
 | UVM + Formal
@@ -28,7 +28,7 @@ Introduction
 ------------
 
 This document describes the microarchitecture of a RISC-V RV32E
-processor targeting the https://tinytapeout.com/[TinyTapeout] shuttle.
+processor targeting the https://tinytapeout.com/[Tiny Tapeout] shuttle.
 The design implements the RISC-V base integer ISA in its embedded
 variant (RV32E), with 16 general-purpose registers and a 32-bit data
 path.

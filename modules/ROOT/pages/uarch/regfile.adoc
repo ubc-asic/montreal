@@ -39,12 +39,18 @@ Register File
 | --
 | Initial draft.
 
-| 0.2-draft.1
+| 0.2
 | 2026-06-13
 | Warrick Lo
 | --
 | Added synchronous reset. +
 Removed requirement for storing zero in register 0 (section 6).
+
+| 0.3
+| 2026-08-12
+| Warrick Lo
+| --
+| Replaced the global slice selector with independent read/write selectors.
 |===
 
 Terminology
@@ -58,14 +64,20 @@ https://rfc-editor.org/info/bcp14[BCP 14]
 {blank}[https://doi.org/10.17487/RFC8174[RFC8174]]
 when, and only when, they appear in all capitals, as shown here.
 
+The term "slice" *SHALL* refer to a fixed-width, non-overlapping portion of
+a word, `SLICE_WIDTH` bits wide. A word is divided into `NUM_SLICES` slices.
+The exact bit range for a slice *SHALL* be interpreted as described in
+requirement `REQ-REGFILE-020`.
+
 IP Overview
 -----------
 
 A register file design for a RISC-V core. Each word is divided into fixed-width
-chunks. A global chunk selector is used to restrict all read and write operations
-to one chunk at a time. Register 0 is hard-wired to zero on all read ports to
-follow the RISC-V specification. One synchronous write port and a configurable
-number of combinational read ports are provided.
+slices. An independent slice selector is used for the read port(s) and the
+write port to allow a read and write to target different slices of the
+register file in the same cycle. Register 0 is hard-wired to zero on all
+read ports to follow the RISC-V specification. One synchronous write port
+and a configurable number of combinational read ports are provided.
 
 Parameters
 ----------
@@ -75,15 +87,15 @@ Parameters
 |===
 | Parameter | Type | Default | Description
 
-| `WORD_WIDTH`
+| `XLEN`
 |`int unsigned`
 | 32
 | Full width of each register in bits.
 
-| `CHUNK_WIDTH`
+| `SLICE_WIDTH`
 | `int unsigned`
 | 8
-| Width of one access chunk in bits.
+| Width of one access slice in bits.
 
 | `ADDR_WIDTH`
 | `int unsigned`
@@ -107,11 +119,11 @@ Parameters
 | 16
 | Total number of registers.
 
-| `NUM_CHUNKS`
+| `NUM_SLICES`
 | `int unsigned`
-| stem:[\texttt{WORD\_WIDTH}/\texttt{CHUNK\_WIDTH}]
+| stem:[\texttt{XLEN}/\texttt{SLICE\_WIDTH}]
 | 4
-| Chunks per word.
+| Slices per word.
 |===
 
 Interface Specification
@@ -138,10 +150,10 @@ Not applicable.
 | 1
 | Active-low synchronous reset.
 
-| `chunk_sel_i`
+| `rslice_i`
 | input
-| stem:[\lceil\log_2{(\texttt{NUM\_CHUNKS})}\rceil]
-| Selects which chunk is accessed this cycle.
+| stem:[\lceil\log_2{(\texttt{NUM\_SLICES})}\rceil]
+| Selects which slice is read this cycle. Applies to all read ports.
 
 | `raddr_i[i]`
 | input
@@ -150,13 +162,18 @@ Not applicable.
 
 | `rdata_o[i]`
 | output
-| `CHUNK_WIDTH`
-| Read data for port stem:[i] (one chunk).
+| `SLICE_WIDTH`
+| Read data for port stem:[i] (one slice).
 
 | `wen_i`
 | input
 | 1
 | Synchronous write enable.
+
+| `wslice_i`
+| input
+| stem:[\lceil\log_2{(\texttt{NUM\_SLICES})}\rceil]
+| Selects which slice is written to this cycle.
 
 | `waddr_i`
 | input
@@ -165,8 +182,8 @@ Not applicable.
 
 | `wdata_i`
 | input
-| `CHUNK_WIDTH`
-| Write data (one chunk).
+| `SLICE_WIDTH`
+| Write data (one slice).
 |===
 
 Design Constraints
@@ -176,13 +193,13 @@ Design Constraints
 |===
 | Constraint ID | Description
 
-| `DC-REGFILE-010`
-| `WORD_WIDTH` *MUST* be a positive integer multiple of `CHUNK_WIDTH`.
+| `CON-REGFILE-010`
+| `XLEN` *MUST* be a positive integer multiple of `SLICE_WIDTH`.
 
-| `DC-REGFILE-020`
+| `CON-REGFILE-020`
 | `ADDR_WIDTH` *MUST* be a positive integer.
 
-| `DC-REGFILE-030`
+| `CON-REGFILE-030`
 | `NUM_READ_PORTS` *MUST* be a positive integer.
 |===
 
@@ -193,57 +210,66 @@ Design Requirements
 |===
 | Requirement ID | Description
 
-| `DR-REGFILE-010`
+| `REQ-REGFILE-010`
 | The module *MUST* store stem:[\texttt{NUM\_WORDS} - 1] words,
-each `WORD_WIDTH` bits wide.
+each `XLEN` bits wide.
 
-| `DR-REGFILE-020`
-| Chunk stem:[k] of word stem:[n] *SHALL* correspond to bits
-stem:[[(k+1) \cdot \texttt{CHUNK\_WIDTH} - 1 : k \cdot \texttt{CHUNK\_WIDTH}]]
-of register stem:[n], partitioning each word into `NUM_CHUNKS` non-overlapping
-chunks each `CHUNK_WIDTH` bits wide.
+| `REQ-REGFILE-020`
+| Slice stem:[k] of word stem:[n] *SHALL* correspond to bits
+stem:[[(k+1) \cdot \texttt{SLICE\_WIDTH} - 1 : k \cdot \texttt{SLICE\_WIDTH}]]
+of register stem:[n], partitioning each word into `NUM_SLICES` non-overlapping
+slices each `SLICE_WIDTH` bits wide.
 
-| `DR-REGFILE-030`
+| `REQ-REGFILE-030`
 | Register contents *MUST* be zero at most one clock cycle after the synchronous
 reset (`rst_ni`) is asserted.
 
-| `DR-REGFILE-040`
+| `REQ-REGFILE-040`
 | Writes to the register file *MUST* only occur on the rising edge of `clk_i`.
 
-| `DR-REGFILE-041`
+| `REQ-REGFILE-041`
 | Writes to the register file *MUST* only occur when `wen_i` is asserted.
 
-| `DR-REGFILE-042`
-| Contents of `wdata_i` *MUST* be written only to the chunk selected by
-`chunk_sel_i` within the register selected by `waddr_i`. All other chunks of
+| `REQ-REGFILE-042`
+| Contents of `wdata_i` *MUST* be written only to the slice selected by
+`wslice_i` within the register selected by `waddr_i`. All other slices of
 the target register *SHALL* remain unchanged.
 
-| `DR-REGFILE-043`
+| `REQ-REGFILE-043`
+| The read selector `rslice_i` *SHALL NOT* affect the write port.
+Read and write slice selection *SHALL* be fully independent.
+
+| `REQ-REGFILE-044`
 | Writes to register 0 *SHALL* be silently ignored, regardless of the state of
 `wen_i`.
 
-| `DR-REGFILE-050`
+| `REQ-REGFILE-050`
 | The read output `rdata_o[i]` *SHALL* be combinationally derived from the
-current register state, `raddr_i[i]`, and `chunk_sel_i`. There *SHALL NOT* be
+current register state, `raddr_i[i]`, and `rslice_i`. There *SHALL NOT* be
 any latency on reads.
 
-| `DR-REGFILE-051`
-| The read output `rdata_o[i]` *MUST* reflect the chunk selected by `chunk_sel_i`
+| `REQ-REGFILE-051`
+| The read output `rdata_o[i]` *MUST* reflect the slice selected by `rslice_i`
 within the register selected by `raddr_i[i]`.
 
-| `DR-REGFILE-052`
+| `REQ-REGFILE-052`
+| The write selector `wslice_i` *SHALL NOT* affect the output of any read port.
+Read and write slice selection *SHALL* be fully independent.
+
+| `REQ-REGFILE-053`
 | The read output `rdata_o[i]` *MUST* be zero when `raddr_i[i]` is zero,
 regardless of any prior writes to register 0.
 
-| `DR-REGFILE-053`
-| Requirement `DR-REGFILE-052` *SHALL* be unconditional: it *MUST* hold at
+| `REQ-REGFILE-054`
+| Requirement `REQ-REGFILE-053` *SHALL* be unconditional: it *MUST* hold at
 power-on without reset having been asserted, and at all times during normal
 operation.
 
-| `DR-REGFILE-060`
-| The module *SHALL NOT* implement any bypass logic. A read and write to the same
-address in the same cycle *SHALL* return the value held in the register prior to
-the rising clock edge of the current cycle.
+| `REQ-REGFILE-060`
+| The module *SHALL NOT* implement any bypass logic. A read and write
+to the same address in the same cycle *SHALL* return the value held in
+the register prior to the rising clock edge of the current cycle,
+regardless of whether `rslice_i` and `wslice_i` select the same slice.
 |===
 
 Timing
@@ -269,7 +295,8 @@ Timing
 Architecture
 ------------
 
-The module is composed of a flop array, a combinational read network, and a clocked write port.
+The module is composed of a flop array, a combinational read network,
+and a clocked write port.
 
 === Storage
 
@@ -277,22 +304,28 @@ The register array is declared as a packed 2D structure:
 
 [source]
 ----
-logic [NUM_WORDS-1:1][WORD_WIDTH-1:0]
+logic [NUM_WORDS-1:1][XLEN-1:0]
 ----
 
 By default, this will be a stem:[15 \times 32] bit array.
 
-=== Chunk Addressing
+=== Slice Addressing
 
-The active chunk within a word is addressed by `chunk_sel_i` using a part-select:
+The active slice for reads and the active slice for writes are addressed
+independently, each via their respective part-select:
 
 [source]
 ----
-register[addr][chunk_sel_i * CHUNK_WIDTH +: CHUNK_WIDTH]
+// Read
+register[raddr_i[i]][rslice_i * SLICE_WIDTH +: SLICE_WIDTH]
+
+// Write
+register[waddr_i][wslice_i * SLICE_WIDTH +: SLICE_WIDTH]
 ----
 
-The input `chunk_sel_i` is a global selector; the write port and all read ports
-will share the same active chunk.
+The read slice selector `rslice_i` is shared by all read ports. The write slice
+selector `wslice_i` selects the write port and is independent from `rslice_i`.
+The selector inputs `rslice_i` and `wslice_i` may differ in the same cycle.
 
 === Read Ports
 
@@ -303,7 +336,7 @@ The reads are all combinational. For a read port stem:[i]:
 \texttt{rdata\_o}[i] =
 \begin{cases}
 	0 & \text{if} \; \texttt{raddr\_i}[i] = 0, \\
-	\texttt{register}[\texttt{raddr\_i}[i]][\text{chunk}] & \text{otherwise}.
+	\texttt{register}[\texttt{raddr\_i}[i]][\text{slice}] & \text{otherwise}.
 \end{cases}
 ++++
 
@@ -318,15 +351,24 @@ Both of the following conditions must be satisfied for a write to occur:
 . `wen_i` is asserted; and
 . `waddr_i` is not zero, as register 0 is write-protected.
 
+The write operation targets only the slice selected by `wslice_i`. All other
+slices of the addressed register remain unchanged.
+
 === Implementation Notes
 
 The following documents implementation decisions, including intentional deviations
 from standard practice and known limitations.
 
-* The register file is implemented with a chunk selector to match the width of
+* The register file is implemented with a slice selector to match the width of
 the datapath design.
 
-* There are no assertions to guard the `WORD_WIDTH % CHUNK_WIDTH == 0` constraint;
+* The register file uses independent read and write slice selectors so the
+datapath can, for example, write back a lower slice while reading an upper
+slice in the same cycle. This is a behavioral change from the single shared
+`slice_sel_i` in version 0.2 of the regfile specification, which forced
+reads and writes onto the same slice.
+
+* There are no assertions to guard the `XLEN % SLICE_WIDTH == 0` constraint;
 violating it will leave the top bits of each word unreachable.
 
 * The write block contains a `dff-name-style` waiver to suppress a

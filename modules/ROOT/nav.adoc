@@ -2,3 +2,4 @@
 * Microarchitecture
 ** xref:uarch/mas.adoc[Microarchitecture Specification (MAS)]
 ** xref:uarch/regfile.adoc[Register File]
+** xref:uarch/fu.adoc[Functional Unit]

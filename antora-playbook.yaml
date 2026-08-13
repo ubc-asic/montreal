@@ -1,5 +1,5 @@
 site:
-  title: "Montréal :: Project Documentation"
+  title: Montréal Project Documentation
   url: https://ubc-asic.github.io/montreal
   start_page: ROOT::index.adoc
 content:

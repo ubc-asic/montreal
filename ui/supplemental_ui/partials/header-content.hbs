@@ -1,7 +1,7 @@
 <header class="header">
   <nav class="navbar">
     <div class="navbar-brand">
-      <a class="navbar-item" href="{{{or site.url siteRootPath}}}">{{site.title}}</a>
+      <a class="navbar-item" href="{{{or site.url siteRootPath}}}">UBC ASIC :: {{site.title}}</a>
       {{#if env.SITE_SEARCH_PROVIDER}}
       <div class="navbar-item search hide-for-print">
         <div id="search-field" class="field">
@@ -17,16 +17,17 @@
     </div>
     <div id="topbar-nav" class="navbar-menu">
       <div class="navbar-end">
-        <a class="navbar-item" href="/montreal/">Home</a>
+        <a class="navbar-item" href="/montreal">Home</a>
         <div class="navbar-item has-dropdown is-hoverable">
           <a class="navbar-link" href="/montreal/uarch/mas.html">Microarchitecture Specification</a>
           <div class="navbar-dropdown">
             <a class="navbar-item" href="/montreal/uarch/regfile.html">Register File</a>
+            <a class="navbar-item" href="/montreal/uarch/fu.html">Functional Unit</a>
           </div>
         </div>
         <div class="navbar-item">
           <span class="control">
-            <a class="button is-primary" href="https://github.com/ubc-asic/montreal.git">Github</a>
+            <a class="button is-primary" href="https://github.com/ubc-asic/montreal">Github</a>
           </span>
         </div>
       </div>

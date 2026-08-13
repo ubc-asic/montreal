@@ -1,0 +1,44 @@
+MONTRÉAL PROJECT DOCS
+=====================
+
+This repository is used for continuous deployment of design documents
+for the Montréal Project. See https://github.com/ubc-asic/montreal.
+
+The AsciiDoc files are deployed using Github Pages and Antora to
+https://ubc-asic.github.io/montreal.
+
+Usage
+-----
+
+1.  To add a page, create a new file with the 'adoc' extension under
+    'modules/ROOT/pages':
+
+	$ touch modules/ROOT/pages/page.adoc
+
+2.  To list the new page in the navigation (left sidebar on the deployed site),
+    link to the page in 'modules/ROOT/nav.adoc':
+
+	modules/ROOT/nav.adoc
+	------------------------------------------------------------------------
+	* xref:page.adoc[Page Name]
+	------------------------------------------------------------------------
+
+3.  To add the page to the header menu, modify the UI template in
+    'ui/supplemental_ui/partials/header-content.hbs':
+
+	ui/supplemental_ui/partials/header-content.hbs
+	------------------------------------------------------------------------
+	<div id="topbar-nav" class="navbar-menu">
+	  <div class="navbar-end">
+	    <a class="navbar-item" href="/montreal/page.html">Page Name</a>
+	  </div>
+	</div>
+	------------------------------------------------------------------------
+
+    Note that the hyperlink reference is to an 'html' extension, not 'adoc'.
+
+4.  Commit your changes and push to the Github server to trigger the CD action:
+
+	$ git add <modified-files>
+	$ git commit -m "Commit message"
+	$ git push origin docs
