@@ -14,4 +14,6 @@ package config_pkg;
   localparam int unsigned REG_ADDR_WIDTH     = 4;
   localparam int unsigned REG_NUM_READ_PORTS = 2;
 
+  /* QSPI parameters */
+  localparam int unsigned DMEM_ADDR_WIDTH   = 24;
 endpackage : config_pkg
