@@ -80,11 +80,16 @@ module qspi_controller #(
   logic       rx_done;
   logic       tx_done;
 
+  // QSPI TXN Types
+  typedef enum logic [1:0] {
+    XACT_IFETCH, // instruction fetch req
+    XACT_DREAD,  // data load req
+    XACT_DWRITE  // data store req
+  } xact_t;
+
   // QSPI REQ packet definition
   typedef struct packed {
-    reg                       is_ifetch;  // instruction fetch req
-    reg                       is_write;   // data store req
-    reg                       is_read;    // data load req
+    xact_t                    xact;       // Type of txn
     reg [IMEM_ADDR_WIDTH-1:0] imem_addr;  // Imemory address
     reg [DMEM_ADDR_WIDTH-1:0] dmem_addr;  // Dmemory address
     reg [XLEN-1:0]            data;       // input data
@@ -133,22 +138,33 @@ module qspi_controller #(
     end
   end
 
-  // Register inputs when we go to CMD phase
+  // Register TXN REQ when we go to CMD phase
   always_ff @(posedge clk) begin
     if (!rst_n) begin
       req_q <= '0;
     end else begin
       if (next_state == CMD) begin
-        req_q.is_ifetch = ifetch_req_in;
-        req_q.is_write  = dmem_req_in && dmem_we_in;
-        req_q.is_read   = dmem_req_in && !dmem_we_in;
-        req_q.imem_addr = ifetch_addr_in;
-        req_q.dmem_addr = dmem_addr_in;
-        req_q.data      = dmem_data_in;
-        req_q.cmd       = (ifetch_req_in)               ? IFETCH_CMD :
-                          (dmem_req_in && dmem_we_in)   ? DWRITE_CMD :
-                          (dmem_req_in && !dmem_we_in)  ? DREAD_CMD  : 
-                          8'h0;
+        if (ifetch_req_in) begin
+          req_q.xact      <= XACT_IFETCH;
+          req_q.imem_addr <= ifetch_addr_in;
+          req_q.dmem_addr <= '0;
+          req_q.data      <= '0;
+          req_q.cmd       <= IFETCH_CMD;
+        end
+        else if (dmem_req_in && dmem_we_in) begin
+          req_q.xact      <= XACT_DWRITE;
+          req_q.imem_addr <= '0;
+          req_q.dmem_addr <= dmem_addr_in;
+          req_q.data      <= dmem_data_in;
+          req_q.cmd       <= DWRITE_CMD;
+        end
+        else if (dmem_req_in && !dmem_we_in) begin
+          req_q.xact      <= XACT_DREAD;
+          req_q.imem_addr <= '0;
+          req_q.dmem_addr <= dmem_addr_in;
+          req_q.data      <= '0;
+          req_q.cmd       <= DREAD_CMD;
+        end
       end
     end
   end
