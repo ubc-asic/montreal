@@ -1,6 +1,9 @@
 rtl/types.svh
 rtl/config_pkg.sv
+rtl/alu.sv
+rtl/fu.sv
 rtl/regfile.sv
+rtl/shifter.sv
 rtl/simple_alu.sv
 rtl/qspi_controller.sv
 rtl/rv32e_core_wrapper.sv

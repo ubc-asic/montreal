@@ -1,11 +1,15 @@
-/* SPDX-License-Identifier: CERN-OHL-P-2.0 */
-
 /*
- * Copyright 2026 UBC ASIC contributors (Montreal project).
+ * Copyright 2026 Project Montreal contributors.
  *
- * Author: Warrick Lo <wlo@warricklo.net>
+ * SPDX-License-Identifier: CERN-OHL-P-2.0
  *
- * Formal verification of regfile requirements
+ * Project:      Montreal (RV32E SoC for Tiny Tapeout)
+ *
+ * Module:       regfile_fv
+ * Tool version: Yosys sby 0.54
+ * Authors:      Warrick Lo <wlo@warricklo.net>
+ *
+ * Description:  Formal verification of regfile requirements
  *
  * This module verifies the regfile module against the requirements
  * specified in the design specification.
@@ -47,11 +51,12 @@
 module regfile_fv (
   input logic clk_i,
   input logic rst_ni,
-  input logic [1:0] slice_sel_i,
 
+  input logic [1:0]      rslice_i,
   input logic [1:0][3:0] raddr_i,
 
   input logic wen_i,
+  input logic [1:0] wslice_i,
   input logic [3:0] waddr_i,
   input logic [7:0] wdata_i
 );
@@ -76,12 +81,13 @@ module regfile_fv (
     .register_dbg(register),
     .clk_i,
     .rst_ni,
-    .slice_sel_i,
 
+    .rslice_i,
     .raddr_i,
     .rdata_o(rdata),
 
     .wen_i,
+    .wslice_i,
     .waddr_i,
     .wdata_i
   );
@@ -116,11 +122,11 @@ module regfile_fv (
    *
    * REQ-REGFILE-050:
    * The read output rdata_o[i] shall be combinationally derived from
-   * the current register state, raddr_i[i], and slice_sel_i. There shall not
+   * the current register state, raddr_i[i], and rslice_i. There shall not
    * be any latency on reads.
    *
    * REQ-REGFILE-051:
-   * The read output rdata_o[i] must reflect the slice selected by slice_sel_i
+   * The read output rdata_o[i] must reflect the slice selected by rslice_i
    * within the register selected by raddr_i[i].
    *
    * Note: These three requirements are easiest to verify together.
@@ -129,10 +135,10 @@ module regfile_fv (
   /* We explicitly ignore the use of part-selects to verify the description of REQ-REGFILE-020. */
   always_comb begin : req_020_050_051
     if (raddr_i[0] != '0) begin
-      assert (rdata[0] == register[raddr_i[0]][(slice_sel_i + 1) * 8 - 1 : slice_sel_i * 8]);
+      assert (rdata[0] == register[raddr_i[0]][(rslice_i+1)*8-1:rslice_i*8]);
     end
     if (raddr_i[1] != '0) begin
-      assert (rdata[1] == register[raddr_i[1]][(slice_sel_i + 1) * 8 - 1 : slice_sel_i * 8]);
+      assert (rdata[1] == register[raddr_i[1]][(rslice_i+1)*8-1:rslice_i*8]);
     end
   end : req_020_050_051
 
@@ -162,13 +168,13 @@ module regfile_fv (
 
   /*
    * REQ-REGFILE-042:
-   * Contents of wdata_i must be written only to the slice selected by slice_sel_i
+   * Contents of wdata_i must be written only to the slice selected by wslice_i
    * within the register selected by waddr_i. All other slices of the target register
    * shall remain unchanged.
    */
 
   /* We'll use a part-select to obtain the slice data since we can assume that
-   * slice_sel_i will select the correct slice within the target register,
+   * wslice_i will select the correct slice within the target register,
    * according to requirement REQ-REGFILE-020. */
   always_ff @(posedge clk_i) begin : req_042
     /* For register 0, this test will specifically permit writes targeting
@@ -178,7 +184,7 @@ module regfile_fv (
       for (int j = 0; j < 4; j++) begin : slice_loop
         /* Ignore reset events. */
         if (past_valid && $past(rst_ni, 1)) begin
-          if ($past((waddr_i == i) && (slice_sel_i == j), 1)) begin
+          if ($past((waddr_i == i) && (wslice_i == j), 1)) begin
             assert ($stable(register[i][j*8+:8]) || (register[i][j*8+:8] == $past(wdata_i, 1)));
           end else begin
             assert ($stable(register[i][j*8+:8]));
@@ -237,11 +243,11 @@ module regfile_fv (
 
   /* Similar to above, we will use a part-select here. */
   always_comb begin : req_060
-    if (wen_i && raddr_i[0] != '0 && raddr_i[0] == waddr_i) begin
-      assert (rdata[0] == register[raddr_i[0]][slice_sel_i*8+:8]);
+    if (wen_i && raddr_i[0] != '0 && raddr_i[0] == waddr_i && rslice_i == wslice_i) begin
+      assert (rdata[0] == register[raddr_i[0]][rslice_i*8+:8]);
     end
-    if (wen_i && raddr_i[1] != '0 && raddr_i[1] == waddr_i) begin
-      assert (rdata[1] == register[raddr_i[1]][slice_sel_i*8+:8]);
+    if (wen_i && raddr_i[1] != '0 && raddr_i[1] == waddr_i && rslice_i == wslice_i) begin
+      assert (rdata[1] == register[raddr_i[1]][rslice_i*8+:8]);
     end
   end : req_060
 

@@ -2,13 +2,17 @@
 *.bak
 *.swp
 *.swo
-.vscode
+
+.vscode/
 .claude/
 
 # Output directory
 output/
 
+# Icarus Verilog artefacts
+*.vvp
+obj_dir/
+
 # SymbiYosys output
-verif/formal/simple_alu/simple_alu/
-verif/formal/simple_alu/simple_alu_bmc/
-verif/formal/simple_alu/simple_alu_cover/
+dv/formal/regfile/regfile*/
+dv/formal/simple_alu/simple_alu*/
