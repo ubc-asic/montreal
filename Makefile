@@ -12,7 +12,7 @@ include flows/synth.mk
 help:
 	@echo "make lint        - run Verilator lint"
 	@echo "make lint_wall   - run Verilator lint -Wall"
-	@echo "make sim         - build + run simulation"
+	@echo "make sim         - build + run simulation (Work In Progress)"
 	@echo "make cellcount   - run Yosys synthesis + report cell count"
 	@echo "make netlist     - run Yosys synthesis + show netlist diagram"
 	@echo "make yosys_shell - load design into an interactive yosys shell"
