@@ -15,16 +15,19 @@ $(OUTPUT_DIR)/synth.ys: $(OUTPUT_DIR)/load.ys
 cellcount: $(OUTPUT_DIR)/synth.ys
 	$(YOSYS) $<
 
-$(OUTPUT_DIR)/netlist.ys: $(OUTPUT_DIR)/load.ys
+$(OUTPUT_DIR)/netlist_%.ys: $(OUTPUT_DIR)/load.ys
 	# convert processes (always blocks) to netlist elements and perform some simple optimizations
-	# draws the netlist
+	# draws the netlist for the module named by the % stem
 	{ cat $<; \
 	  echo "proc; opt"; \
-	  echo "show"; } > $@
+	  echo "show $*"; } > $@
+
+.PHONY: netlist_%
+netlist_%: $(OUTPUT_DIR)/netlist_%.ys
+	$(YOSYS) $<
 
 .PHONY: netlist
-netlist: $(OUTPUT_DIR)/netlist.ys
-	$(YOSYS) $<
+netlist: netlist_$(TOP)
 
 $(OUTPUT_DIR)/shell.ys: $(OUTPUT_DIR)/load.ys
 	{ cat $<; \
