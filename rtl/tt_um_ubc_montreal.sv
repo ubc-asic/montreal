@@ -20,7 +20,7 @@
  *            exactly. Do not modify the port names.
  */
 /* verilog_lint: waive module-filename */
-module tt_top_ubc_montreal (
+module tt_um_ubc_montreal (
   /* verilog_lint: waive-start port-name-suffix */
   /* Dedicated inputs. */
   input wire [7:0] ui_in,
@@ -68,4 +68,4 @@ module tt_top_ubc_montreal (
     .uio_oe()
   );
 
-endmodule : tt_top_ubc_montreal
+endmodule : tt_um_ubc_montreal

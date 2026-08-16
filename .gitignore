@@ -6,13 +6,19 @@
 .vscode/
 .claude/
 
+# LibreLane and tt-support-tools
+/tt/
+/runs/
+/rtl/user_config.json
+/rtl/config_merged.json
+
 # Output directory
-output/
+/output/
 
 # Icarus Verilog artefacts
 *.vvp
 obj_dir/
 
 # SymbiYosys output
-dv/formal/regfile/regfile*/
-dv/formal/simple_alu/simple_alu*/
+/dv/formal/regfile/regfile*/
+/dv/formal/simple_alu/simple_alu*/
