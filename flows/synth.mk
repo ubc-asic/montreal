@@ -29,6 +29,19 @@ netlist_%: $(OUTPUT_DIR)/netlist_%.ys
 .PHONY: netlist
 netlist: netlist_$(TOP)
 
+$(OUTPUT_DIR)/area.ys: $(RTL_FILELIST)
+	# synthesis-only area estimate: maps generic cells onto real SKY130 std cells
+	mkdir -p $(OUTPUT_DIR)
+	{ sed 's/^/read_verilog -sv -I rtl /' $(RTL_FILELIST); \
+	  echo "synth -top $(TOP)"; \
+	  echo "dfflibmap -liberty $(SKY130_LIB)"; \
+	  echo "abc -liberty $(SKY130_LIB)"; \
+	  echo "stat -liberty $(SKY130_LIB)"; } > $@
+
+.PHONY: area
+area: $(OUTPUT_DIR)/area.ys
+	$(YOSYS) $<
+
 $(OUTPUT_DIR)/shell.ys: $(OUTPUT_DIR)/load.ys
 	{ cat $<; \
 	  echo "shell"; } > $@

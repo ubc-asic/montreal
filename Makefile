@@ -16,6 +16,7 @@ help:
 	@echo "make cellcount   		- run Yosys synthesis + report cell count"
 	@echo "make netlist          	- run Yosys synthesis + show netlist diagram for \$$(TOP)"
 	@echo "make netlist_<module>	- same, but for a specific module (e.g. netlist_qspi_controller)"
+	@echo "make area        		- run Yosys synthesis mapped to SKY130 std cells + report area"
 	@echo "make yosys_shell 		- load design into an interactive yosys shell"
 	@echo "make clean       		- remove all build artifacts"
 
