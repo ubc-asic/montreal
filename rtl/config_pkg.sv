@@ -15,5 +15,9 @@ package config_pkg;
   localparam int unsigned REG_NUM_READ_PORTS = 2;
 
   /* QSPI parameters */
+  localparam int unsigned IMEM_ADDR_WIDTH   = 24;
   localparam int unsigned DMEM_ADDR_WIDTH   = 24;
+  localparam logic [7:0] IFETCH_CMD        = 8'hEB;
+  localparam logic [7:0] DWRITE_CMD        = 8'h38;
+  localparam logic [7:0] DREAD_CMD         = 8'h0B;
 endpackage : config_pkg

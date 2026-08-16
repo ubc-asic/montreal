@@ -29,9 +29,17 @@
  * QSPI controller is a dedicated FSM responsible for serialising instruction fetch and data memory accesses over the QSPI PMOD interface
  * Implements a simple req/ack interface to the cpu datapath
  */
-module qspi_controller 
-  import config_pkg::*;
-  (
+
+ // TODO: Add error state: if ifetch_req & dmem_req asserted at same time
+
+module qspi_controller #(
+  parameter int unsigned XLEN             = config_pkg::XLEN,
+  parameter int unsigned DMEM_ADDR_WIDTH  = config_pkg::DMEM_ADDR_WIDTH,
+  parameter int unsigned IMEM_ADDR_WIDTH  = config_pkg::IMEM_ADDR_WIDTH,
+  parameter logic [7:0]  IFETCH_CMD       = config_pkg::IFETCH_CMD,
+  parameter logic [7:0]  DWRITE_CMD       = config_pkg::DWRITE_CMD,
+  parameter logic [7:0]  DREAD_CMD        = config_pkg::DREAD_CMD
+) (
   /* verilog_lint: waive-start port-name-suffix */
   /* Clock. */
   input wire clk,
@@ -47,7 +55,7 @@ module qspi_controller
 
   /* IMEM handshake */
   input   wire ifetch_req_in,
-  input   wire ifetch_addr_in,
+  input   wire [IMEM_ADDR_WIDTH-1:0] ifetch_addr_in,
   output  wire ifetch_done_out,
   output  wire [XLEN-1:0] ifetch_data_out,
 
@@ -55,7 +63,8 @@ module qspi_controller
   input   wire [2:0] funct3,
   input   wire dmem_req_in,
   input   wire dmem_we_in,
-  input   wire dmem_addr_in,
+  input   wire [XLEN-1:0] dmem_data_in,
+  input   wire [DMEM_ADDR_WIDTH-1:0] dmem_addr_in,
   output  wire dmem_done_out,
   output  wire [XLEN-1:0] dmem_data_out
   );
@@ -65,6 +74,15 @@ module qspi_controller
   logic [3:0] qspi_data;
 
   logic       init_done;
+  logic       cmd_done;
+  logic       addr_done;
+  logic       dummy_done;
+  logic       rx_done;
+  logic       tx_done;
+
+  reg [IMEM_ADDR_WIDTH-1:0] imem_addr_q;   // Clocks in imem address input
+  reg [DMEM_ADDR_WIDTH-1:0] dmem_addr_q;   // Clocks in dmem address input
+  reg [XLEN-1:0]            dmem_data_q;   // Clocks in data input
 
   // State definition
   typedef enum logic [2:0] {
@@ -83,7 +101,17 @@ module qspi_controller
   always @(*) begin
     next_state = state;
     case (state)
-      INIT: if (init_done) next_state = IDLE;
+      INIT:   if (init_done)                    next_state = IDLE;
+      IDLE:   if (ifetch_req_in || dmem_req_in) next_state = CMD;
+      CMD:    if (cmd_done)                     next_state = ADDR;
+      ADDR:   if (addr_done)                    next_state = DUMMY;
+      DUMMY:  begin 
+        if (dummy_done && (ifetch_req_in || (dmem_req_in && !dmem_we_in))) next_state = RX; // RX if ifetch/load
+        else if (dummy_done && (dmem_req_in && dmem_we_in))                next_state = TX; // TX if store
+      end
+      RX: if (rx_done) next_state = DONE;
+      TX: if (tx_done) next_state = DONE;
+      DONE: next_state = IDLE;
       default: next_state = state;
     endcase
   end
@@ -92,6 +120,8 @@ module qspi_controller
   always_ff @(posedge clk) begin
     if (!rst_n) begin
       state <= INIT;
+    end else begin
+      state <= next_state;
     end
   end
 
