@@ -80,9 +80,17 @@ module qspi_controller #(
   logic       rx_done;
   logic       tx_done;
 
-  reg [IMEM_ADDR_WIDTH-1:0] imem_addr_q;   // Clocks in imem address input
-  reg [DMEM_ADDR_WIDTH-1:0] dmem_addr_q;   // Clocks in dmem address input
-  reg [XLEN-1:0]            dmem_data_q;   // Clocks in data input
+  // QSPI REQ packet definition
+  typedef struct packed {
+    reg                       is_ifetch;  // instruction fetch req
+    reg                       is_write;   // data store req
+    reg                       is_read;    // data load req
+    reg [IMEM_ADDR_WIDTH-1:0] imem_addr;  // Imemory address
+    reg [DMEM_ADDR_WIDTH-1:0] dmem_addr;  // Dmemory address
+    reg [XLEN-1:0]            data;       // input data
+    reg [7:0]                 cmd;        // CMD Byte
+  } qspi_req_t;
+  qspi_req_t req_q;
 
   // State definition
   typedef enum logic [2:0] {
@@ -125,9 +133,30 @@ module qspi_controller #(
     end
   end
 
+  // Register inputs when we go to CMD phase
+  always_ff @(posedge clk) begin
+    if (!rst_n) begin
+      req_q <= '0;
+    end else begin
+      if (next_state == CMD) begin
+        req_q.is_ifetch = ifetch_req_in;
+        req_q.is_write  = dmem_req_in && dmem_we_in;
+        req_q.is_read   = dmem_req_in && !dmem_we_in;
+        req_q.imem_addr = ifetch_addr_in;
+        req_q.dmem_addr = dmem_addr_in;
+        req_q.data      = dmem_data_in;
+        req_q.cmd       = (ifetch_req_in)               ? IFETCH_CMD :
+                          (dmem_req_in && dmem_we_in)   ? DWRITE_CMD :
+                          (dmem_req_in && !dmem_we_in)  ? DREAD_CMD  : 
+                          8'h0;
+      end
+    end
+  end
+
   // Outputs
   always_ff @(posedge clk) begin
     if (!rst_n) begin
+
 
     end
   end
