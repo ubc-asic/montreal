@@ -80,6 +80,26 @@ module qspi_controller #(
   logic       rx_done;
   logic       tx_done;
 
+  reg [3:0]   count;
+
+  // PMOD TXN packet definition
+  typedef struct packed {
+    logic       sck;  // clk
+    logic [2:0] cs;   // cs[2] = RAM B, cd[1] = RAM A, cs[0] = FLASH (IMEM)
+    logic [3:0] sd;   // 4 data lines
+  } qspi_pmod_t;
+  qspi_pmod_t  qspi_pmod_txn;
+
+  // Assign uio outputs
+  assign uio_out[7] = qspi_pmod_txn.cs[2];
+  assign uio_out[6] = qspi_pmod_txn.cs[1];
+  assign uio_out[5] = qspi_pmod_txn.sd[3];
+  assign uio_out[4] = qspi_pmod_txn.sd[2];
+  assign uio_out[3] = qspi_pmod_txn.sck;
+  assign uio_out[2] = qspi_pmod_txn.sd[1];
+  assign uio_out[1] = qspi_pmod_txn.sd[0];
+  assign uio_out[0] = qspi_pmod_txn.cs[0];
+
   // QSPI TXN Types
   typedef enum logic [1:0] {
     XACT_IFETCH, // instruction fetch req
@@ -172,9 +192,23 @@ module qspi_controller #(
   // Outputs
   always_ff @(posedge clk) begin
     if (!rst_n) begin
-
-
+      qspi_pmod_txn <= 0;
+    end else begin
+      case (next_state)
+      CMD: begin
+        if (count == 0)  begin
+          qspi_pmod_txn.sd <= req_q.cmd[7:4];
+          count <= count + 1;
+        end
+        if (count == 1)  begin
+          qspi_pmod_txn.sd <= req_q.cmd[3:0];
+          count <= 0;
+        end
+      end
+      default: qspi_pmod_txn <=0;
+      endcase
     end
   end
+
 
 endmodule : qspi_controller
