@@ -65,7 +65,22 @@ module tt_top_ubc_montreal (
     /* I/O: output path. */
     .uio_out(),
     /* I/O: active high output enable. */
-    .uio_oe()
+    .uio_oe(),
+
+    /* IMEM handshake */
+    .ifetch_req_in(),
+    .ifetch_addr_in(),
+    .ifetch_done_out(),
+    .ifetch_data_out(),
+
+    /* DMEM handshake */
+    .funct3(),
+    .dmem_req_in(),
+    .dmem_we_in(),
+    .dmem_addr_in(),
+    .dmem_data_in(),
+    .dmem_done_out(),
+    .dmem_data_out()
   );
 
 endmodule : tt_top_ubc_montreal

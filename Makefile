@@ -10,13 +10,15 @@ include flows/synth.mk
 
 .PHONY: help
 help:
-	@echo "make lint        - run Verilator lint"
-	@echo "make lint_wall   - run Verilator lint -Wall"
-	@echo "make sim         - build + run simulation (Work In Progress)"
-	@echo "make cellcount   - run Yosys synthesis + report cell count"
-	@echo "make netlist     - run Yosys synthesis + show netlist diagram"
-	@echo "make yosys_shell - load design into an interactive yosys shell"
-	@echo "make clean       - remove all build artifacts"
+	@echo "make lint        		- run Verilator lint"
+	@echo "make lint_wall   		- run Verilator lint -Wall"
+	@echo "make sim         		- build + run simulation (Work In Progress)"
+	@echo "make cellcount   		- run Yosys synthesis + report cell count"
+	@echo "make netlist          	- run Yosys synthesis + show netlist diagram for \$$(TOP)"
+	@echo "make netlist_<module>	- same, but for a specific module (e.g. netlist_qspi_controller)"
+	@echo "make area        		- run Yosys synthesis mapped to SKY130 std cells + report area"
+	@echo "make yosys_shell 		- load design into an interactive yosys shell"
+	@echo "make clean       		- remove all build artifacts"
 
 .PHONY: clean
 clean:
