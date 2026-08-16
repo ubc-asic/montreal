@@ -69,6 +69,9 @@ module qspi_controller #(
   output  wire [XLEN-1:0] dmem_data_out
   );
 
+  localparam int IMEM_ADDR_NIBBLES = IMEM_ADDR_WIDTH/4;
+  localparam int DMEM_ADDR_NIBBLES = DMEM_ADDR_WIDTH/4;
+
   logic       qspi_clk;
   logic       qspi_cs_n;
   logic [3:0] qspi_data;
@@ -193,16 +196,51 @@ module qspi_controller #(
   always_ff @(posedge clk) begin
     if (!rst_n) begin
       qspi_pmod_txn <= 0;
+      count <= 0;
+      cmd_done <= 0;
+      addr_done <= 0;
     end else begin
       case (next_state)
+      IDLE: begin
+        qspi_pmod_txn <= 0;
+        count <= 0;
+        cmd_done <=0;
+        addr_done <= 0;
+      end
       CMD: begin
+        // Output upper cmd byte
         if (count == 0)  begin
           qspi_pmod_txn.sd <= req_q.cmd[7:4];
           count <= count + 1;
         end
+        // Output lower cmd byte
         if (count == 1)  begin
           qspi_pmod_txn.sd <= req_q.cmd[3:0];
           count <= 0;
+          cmd_done <=1;
+        end
+      end
+      ADDR: begin
+        // If IFETCH req
+        if (req_q.xact == XACT_IFETCH) begin
+
+          qspi_pmod_txn.sd <= req_q.imem_addr[IMEM_ADDR_WIDTH-1-4*count-:4];
+
+          if (count == 4'(IMEM_ADDR_NIBBLES - 1))  begin
+            count <= 0;
+            addr_done <= 1;
+          end
+        end
+
+        // If DMEM req
+        else if ((req_q.xact == XACT_DREAD) || (req_q.xact == XACT_DWRITE)) begin
+
+          qspi_pmod_txn.sd <= req_q.dmem_addr[DMEM_ADDR_WIDTH-1-4*count-:4];
+
+          if (count == 4'(DMEM_ADDR_NIBBLES - 1))  begin
+            count <= 0;
+            addr_done <= 1;
+          end
         end
       end
       default: qspi_pmod_txn <=0;
