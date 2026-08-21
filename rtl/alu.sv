@@ -22,18 +22,14 @@
  * increments by 1, starting at 0.
  */
 
+`include "config.svh"
 `include "types.svh"
 
-module alu #(
-  parameter int unsigned XLEN        = config_pkg::XLEN,
-  parameter int unsigned SLICE_WIDTH = config_pkg::SLICE_WIDTH,
-
-  localparam int unsigned SLICE_ADDR_WIDTH = $clog2(XLEN / SLICE_WIDTH)
-) (
+module alu (
   input logic clk_i,
   input logic rst_ni,
 
-  input logic [SLICE_ADDR_WIDTH:0] cycle_i,
+  input logic [DATAPATH_CYCLE_WIDTH-1:0] cycle_i,
 
   input fu_op_t alu_op_i,
 
