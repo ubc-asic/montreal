@@ -20,24 +20,18 @@
  * both the read and write slices.
  */
 
+`include "config.svh"
 `include "types.svh"
 
-module fu #(
-  parameter int unsigned XLEN        = config_pkg::XLEN,
-  parameter int unsigned SLICE_WIDTH = config_pkg::SLICE_WIDTH,
-
-  localparam int unsigned SLICE_COUNT      = XLEN / SLICE_WIDTH,
-  localparam int unsigned SLICE_ADDR_WIDTH = $clog2(SLICE_COUNT)
-) (
+module fu (
   input logic clk_i,
   input logic rst_ni,
 
   input  logic valid_i,
   output logic ready_o,
 
-  /* Cycle count should be SLICE_ADDR_WIDTH+1 bits wide.
-   * Right shift operations need one extra cycle to fetch shamt. */
-  input logic [SLICE_ADDR_WIDTH:0] cycle_i,
+  /* Right shift operations need one extra cycle to fetch shamt. */
+  input logic [DATAPATH_CYCLE_WIDTH:0] cycle_i,
 
   input fu_op_t fu_op_i,
 
@@ -46,8 +40,8 @@ module fu #(
 
   output slice_t result_o,
 
-  output logic [SLICE_ADDR_WIDTH-1:0] rslice_o,
-  output logic [SLICE_ADDR_WIDTH-1:0] wslice_o
+  output logic [SLICE_SEL_WIDTH-1:0] rslice_o,
+  output logic [SLICE_SEL_WIDTH-1:0] wslice_o
 );
 
   /* Control. */
@@ -84,8 +78,8 @@ module fu #(
   /* Shifter module. */
 
   logic shift_type, shift_arithmetic;
-  logic [SLICE_ADDR_WIDTH-1:0] shifter_rslice, shifter_wslice;
-  logic [$clog2(XLEN)-1:0] shamt_d, shamt_q;
+  logic [SLICE_SEL_WIDTH-1:0] shifter_rslice, shifter_wslice;
+  logic [WORD_SHIFT_WIDTH-1:0] shamt_d, shamt_q;
   slice_t shifter_result;
 
   shifter #(
@@ -139,7 +133,7 @@ module fu #(
 
     /* Capture shift amount on cycle 0. */
     if (~|cycle_i) begin
-      shamt_d = b_i[$clog2(XLEN)-1:0];
+      shamt_d = b_i[WORD_SHIFT_WIDTH-1:0];
     end else begin
       shamt_d = shamt_q;
     end

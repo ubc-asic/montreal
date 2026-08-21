@@ -15,10 +15,12 @@
 `ifndef TYPES_SVH
 `define TYPES_SVH
 
-typedef logic                                        [config_pkg::XLEN-1:0] word_t;
-typedef logic [2 ** config_pkg::REG_ADDR_WIDTH - 1:0][config_pkg::XLEN-1:0] word_bank_t;
+`include "config.svh"
 
-typedef logic [config_pkg::SLICE_WIDTH-1:0] slice_t;
+typedef logic                [XLEN-1:0] word_t;
+typedef logic [REG_COUNT-1:0][XLEN-1:0] word_bank_t;
+
+typedef logic [SLICE_WIDTH-1:0] slice_t;
 
 typedef enum logic [3:0] {
   /* Arithmetic operations. */
