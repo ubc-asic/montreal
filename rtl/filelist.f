@@ -1,5 +1,5 @@
+rtl/config.svh
 rtl/types.svh
-rtl/config_pkg.sv
 rtl/alu.sv
 rtl/fu.sv
 rtl/regfile.sv

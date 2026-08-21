@@ -14,13 +14,11 @@ prove: depth 20
 smtbmc
 
 [script]
-read -formal -sv config_pkg.sv
-read -formal -sv regfile.sv
-read -formal -sv regfile_fv.sv
+read -formal -sv regfile.sv regfile_fv.sv
 prep -top regfile_fv
 
 [files]
+rtl/config.svh
 rtl/types.svh
-rtl/config_pkg.sv
 rtl/regfile.sv
 dv/formal/regfile/regfile_fv.sv
