@@ -17,7 +17,6 @@
  */
 
 module alu_add_sub_tb;
-  import montreal_pkg::*;
 
   logic clk_i, rst_ni, carry_o;
   logic [1:0] count_i;
