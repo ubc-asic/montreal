@@ -70,4 +70,9 @@ module tt_um_ubc_montreal (
     .uio_oe (uio_oe)
   );
 
+    .uio_in (uio_in),
+    .uio_out(uio_out),
+    .uio_oe (uio_oe)
+  );
+  
 endmodule : tt_um_ubc_montreal

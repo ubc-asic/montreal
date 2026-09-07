@@ -26,7 +26,7 @@ module qspi_controller (
   output logic [7:0] uio_out,
   output logic [7:0] uio_oe
   /* verilog_lint: waive-stop port-name-suffix */
-);
+ );
 
   logic       qspi_clk;
   logic       qspi_cs_n;
