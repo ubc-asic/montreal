@@ -20,5 +20,5 @@ prep -top regfile_fv
 [files]
 rtl/config.svh
 rtl/types.svh
-rtl/regfile.sv
+rtl/core/regfile.sv
 dv/formal/regfile/regfile_fv.sv

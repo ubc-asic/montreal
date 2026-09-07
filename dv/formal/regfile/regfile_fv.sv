@@ -43,7 +43,7 @@
  *   - REQ-REGFILE-060
  *
  * See also: MAS, Regfile Specification, version 0.2
- *           rtl/regfile.sv
+ *           rtl/core/regfile.sv
  */
 
 `include "config.svh"

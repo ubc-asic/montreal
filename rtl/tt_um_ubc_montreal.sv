@@ -54,6 +54,9 @@ module tt_um_ubc_montreal (
 
   rv32e_core_wrapper u_rv32e_core_wrapper ();
 
+  io_wrapper u_io_wrapper ();
+
+  // TODO: move into io_wrapper
   qspi_controller u_qspi_controller (
     /* Clock. */
     .clk,

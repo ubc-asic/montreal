@@ -20,7 +20,7 @@ $(OUTPUT_DIR)/netlist.ys: $(OUTPUT_DIR)/load.ys
 	# draws the netlist
 	{ cat $<; \
 	  echo "proc; opt"; \
-	  echo "show"; } > $@
+	  echo "show $(TOP)"; } > $@
 
 .PHONY: netlist
 netlist: $(OUTPUT_DIR)/netlist.ys
