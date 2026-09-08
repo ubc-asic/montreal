@@ -38,4 +38,19 @@ localparam int unsigned DATAPATH_CYCLE_WIDTH = SLICE_SEL_WIDTH + 1;
 localparam int unsigned WORD_SHIFT_WIDTH  = $clog2(XLEN);
 localparam int unsigned SLICE_SHIFT_WIDTH = $clog2(SLICE_WIDTH);
 
+/* Debug UART. See uarch/uart.adoc in the montreal-docs repository. */
+localparam int unsigned UART_CLK_HZ       = 50_000_000;
+localparam int unsigned UART_BAUD_RATE    = 115_200;
+localparam int unsigned UART_CLKS_PER_BIT = UART_CLK_HZ / UART_BAUD_RATE;
+
+/* The bit period is programmable through the BITPERIOD register, so the
+ * counter is sized for the slowest baud rate we intend to support rather
+ * than the one selected at reset. Sixteen bits reaches roughly 763 baud
+ * from a 50 MHz clock */
+localparam int unsigned UART_BIT_PERIOD_WIDTH = 16;
+
+/* Reset value of the BITPERIOD register. One less than the number of
+ * clock cycles in a bit period, because the counter starts at zero */
+localparam int unsigned UART_BIT_PERIOD_RESET = UART_CLKS_PER_BIT - 1;
+
 `endif /* CONFIG_SVH */
