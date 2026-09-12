@@ -12,89 +12,86 @@
  */
 
 module io_wrapper (
+  /* Generic signals. */
+  input logic clk_i,
+  input logic rst_ni,
+
+  /* Core-facing port. */
+  input  io_bus_req_t  core_req_i,
+  output io_bus_resp_t core_resp_o,
+
+  /* Sideband port. */
+  // TODO
+
+  /* Chip-level pins. */
+  /* verilog_lint: waive-start port-name-suffix */
+  input  logic [7:0] uio_in,
+  output logic [7:0] uio_out,
+  output logic [7:0] uio_oe
+  /* verilog_lint: waive-stop port-name-suffix */
+);
+
+  io_bus_req_t  uart_req;
+  io_bus_resp_t uart_resp;
+  io_bus_req_t  qspi_req;
+  io_bus_resp_t qspi_resp;
+  io_bus_req_t  regbank_req;
+  io_bus_resp_t regbank_resp;
+
+  /* Contains packet forwarding logic from one master to many slaves. */
+  // TODO: Leave unstitched until relevant modules completed and initial verif complete
+  io_bus_interconnect u_io_bus_interconnect (
     /* Generic signals. */
-    input wire clk,
-    input wire rst_n,
+    .clk_i,
+    .rst_ni,
 
     /* Core-facing port. */
-    input  io_bus_req_t  core_req_i,
-    output io_bus_resp_t core_resp_o,
+    .core_req_i (),
+    .core_resp_o(),
 
-    /* Sideband port. */
-    // TODO
+    /* Fan-out to QSPI controller. */
+    .qspi_req_o (),
+    .qspi_resp_i(),
 
-    /* Chip level pins. */
-    input  wire [7:0] uio_in,
-    output wire [7:0] uio_out,
-    output wire [7:0] uio_oe
- );
-    
-    io_bus_req_t  uart_req;
-    io_bus_resp_t uart_resp;
-    io_bus_req_t  qspi_req;
-    io_bus_resp_t qspi_resp;
-    io_bus_req_t  regbank_req;
-    io_bus_resp_t regbank_resp;
+    /* Fan-out to UART controller. */
+    .uart_req_o (),
+    .uart_resp_i(),
 
-    // Contains packet forwarding logic from one master to many slaves
-    // TODO: Leave unstitched until relevant modules completed and initial verif complete
-    io_bus_interconnect u_io_bus_interconnect (
-        /* Generic signals. */
-        .clk(),
-        .rst_n(),
+    /* Fan-out to common regbank. */
+    .regbank_req_o (),
+    .regbank_resp_i()
+  );
 
-        /* Core-facing port. */
-        .core_req_i(),
-        .core_resp_o(),
+  // TODO: Leave unstitched until relevant modules completed and initial verif complete
+  qspi_controller u_qspi_controller (
+    /* Generic signals. */
+    .clk_i,
+    .rst_ni,
 
-        /* Fan-out to QSPI Controller. */
-        .qspi_req_i(),
-        .qspi_resp_o(),
+    /* IO bus interconnect path. */
+    .req_i (),
+    .resp_o(),
 
-        /* Fan-out to UART Controller. */
-        .uart_req_i(),
-        .uart_resp_o(),
+    /* Chip-level pins. */
+    .uio_in (),
+    .uio_out(),
+    .uio_oe ()
+  );
 
-        /* Fan-out to Common Regbank. */
-        .regbank_req_i(),
-        .regbank_resp_o()
-    );
+  // TODO: Stitch UART module
 
-    // TODO: Leave unstitched until relevant modules completed and initial verif complete
-    qspi_controller u_qspi_controller (
-        // Clock 
-        .clk,
-        // Active-low reset
-        .rst_n,
+  /* Common register bank. */
+  // TODO: Leave unstitched until relevant modules completed and initial verif complete
+  common_reg_bank u_common_reg_bank (
+    /* Generic signals. */
+    .clk_i,
+    .rst_ni,
 
-        // IO Bus Interconnect path
-        .req_i(),
-        .resp_o(),
+    /* IO bus interconnect path. */
+    .req_i (),
+    .resp_o()
 
-        // I/O: input path
-        .uio_in(),
-        // I/O: output path
-        .uio_out(),
-        // I/O: active high output enable
-        .uio_oe()
-     );
-
-    
-    // TODO: Stitch UART module
-
-    // Common register bank
-    // TODO: Leave unstitched until relevant modules completed and initial verif complete
-    common_reg_bank u_common_reg_bank (
-        // Clock 
-        .clk(),
-        // Active-low reset
-        .rst_n(),
-
-        // IO Bus Interconnect path
-        .req_i(),
-        .resp_o()
-
-        // TODO: Add sideband connections
-    );
+    // TODO: Add sideband connections
+  );
 
 endmodule : io_wrapper
