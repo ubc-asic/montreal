@@ -39,6 +39,14 @@ typedef enum logic [3:0] {
   SLTU = 4'b0011
 } fu_op_t;
 
+typedef enum logic [2:0] {
+  IMM_I,
+  IMM_S,
+  IMM_B,
+  IMM_U,
+  IMM_J
+} imm_fmt_t;
+
 /* IO bus handshaking. */
 
 /* Driven by master. */
