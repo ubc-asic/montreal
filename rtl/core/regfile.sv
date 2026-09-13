@@ -22,17 +22,10 @@
  * all reads.
  */
 
+`include "config.svh"
 `include "types.svh"
 
-module regfile #(
-  parameter int unsigned XLEN           = config_pkg::XLEN,
-  parameter int unsigned SLICE_WIDTH    = config_pkg::SLICE_WIDTH,
-  parameter int unsigned ADDR_WIDTH     = config_pkg::REG_ADDR_WIDTH,
-  parameter int unsigned NUM_READ_PORTS = config_pkg::REG_NUM_READ_PORTS,
-
-  localparam int unsigned NUM_WORDS        = 2 ** ADDR_WIDTH,
-  localparam int unsigned SLICE_ADDR_WIDTH = $clog2(XLEN / SLICE_WIDTH)
-) (
+module regfile (
 /* Expose the internal register state for formal verification.
  * Yosys/SBY cannot reliably reference hierarchical signals after
  * elaboration and optimisation. */
@@ -44,14 +37,14 @@ module regfile #(
   input logic clk_i,
   input logic rst_ni,
 
-  input  logic [SLICE_ADDR_WIDTH-1:0]                rslice_i,
-  input  logic [NUM_READ_PORTS-1:0][ADDR_WIDTH-1:0]  raddr_i,
-  output logic [NUM_READ_PORTS-1:0][SLICE_WIDTH-1:0] rdata_o,
+  input  logic [SLICE_SEL_WIDTH-1:0]                    rslice_i,
+  input  logic [REG_READ_PORTS-1:0][REG_ADDR_WIDTH-1:0] raddr_i,
+  output logic [REG_READ_PORTS-1:0][SLICE_WIDTH-1:0]    rdata_o,
 
   input logic wen_i,
-  input logic [SLICE_ADDR_WIDTH-1:0] wslice_i,
-  input logic [ADDR_WIDTH-1:0]       waddr_i,
-  input logic [SLICE_WIDTH-1:0]      wdata_i
+  input logic [SLICE_SEL_WIDTH-1:0] wslice_i,
+  input logic [REG_ADDR_WIDTH-1:0]  waddr_i,
+  input logic [SLICE_WIDTH-1:0]     wdata_i
 );
 
   word_bank_t register;
@@ -62,7 +55,7 @@ module regfile #(
 `endif
 
   always_comb begin
-    for (int i = 0; i < NUM_READ_PORTS; i++) begin : gen_read_block
+    for (int i = 0; i < REG_READ_PORTS; i++) begin : gen_read_block
       rdata_o[i] = (raddr_i[i] == '0)
           ? '0 : register[raddr_i[i]][rslice_i*SLICE_WIDTH+:SLICE_WIDTH];
     end : gen_read_block

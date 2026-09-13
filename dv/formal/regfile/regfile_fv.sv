@@ -43,9 +43,10 @@
  *   - REQ-REGFILE-060
  *
  * See also: MAS, Regfile Specification, version 0.2
- *           rtl/regfile.sv
+ *           rtl/core/regfile.sv
  */
 
+`include "config.svh"
 `include "types.svh"
 
 module regfile_fv (
@@ -72,12 +73,7 @@ module regfile_fv (
    * DUT instance.
    */
 
-  regfile #(
-    .XLEN(32),
-    .SLICE_WIDTH(8),
-    .ADDR_WIDTH(4),
-    .NUM_READ_PORTS(2)
-  ) dut (
+  regfile dut (
     .register_dbg(register),
     .clk_i,
     .rst_ni,

@@ -15,10 +15,12 @@
 `ifndef TYPES_SVH
 `define TYPES_SVH
 
-typedef logic                                        [config_pkg::XLEN-1:0] word_t;
-typedef logic [2 ** config_pkg::REG_ADDR_WIDTH - 1:0][config_pkg::XLEN-1:0] word_bank_t;
+`include "config.svh"
 
-typedef logic [config_pkg::SLICE_WIDTH-1:0] slice_t;
+typedef logic                [XLEN-1:0] word_t;
+typedef logic [REG_COUNT-1:0][XLEN-1:0] word_bank_t;
+
+typedef logic [SLICE_WIDTH-1:0] slice_t;
 
 typedef enum logic [3:0] {
   /* Arithmetic operations. */
@@ -36,5 +38,25 @@ typedef enum logic [3:0] {
   SLT  = 4'b0010,
   SLTU = 4'b0011
 } fu_op_t;
+
+/* IO bus handshaking. */
+
+/* Driven by master. */
+typedef struct packed {
+  logic        req_valid;
+  logic [31:0] req_addr;
+  logic        req_we;
+  logic [3:0]  req_wstrb;
+  logic [31:0] req_wdata;
+  logic        resp_ready;
+} io_bus_req_t;
+
+/* Driven by slave. */
+typedef struct packed {
+  logic        req_ready;
+  logic        resp_valid;
+  logic [31:0] resp_data;
+  logic        resp_err;
+} io_bus_resp_t;
 
 `endif /* TYPES_SVH */

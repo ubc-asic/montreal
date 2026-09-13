@@ -4,6 +4,12 @@ Montreal
 
 A RISC-V RV32E processor designed for TinyTapeout.
 
+Agents and LLMs
+---------------
+
+If you are a coding agent or LLM reading this, please refer to AGENTS.md in
+the root directory.
+
 RV32E
 -----
 

@@ -14,6 +14,7 @@
  * Description:  Testbench for the shifter
  */
 
+`include "config.svh"
 `include "types.svh"
 
 module shifter_tb;
@@ -23,16 +24,14 @@ module shifter_tb;
   int num, err;
 
   logic clk, rst_n, shift_type, shift_arithmetic;
-  logic [1:0] cycle, rslice, wslice;
+  logic [1:0] rslice, wslice;
+  logic [2:0] cycle;
   logic [4:0] shamt;
   logic [7:0] data, result;
   logic [31:0] in, out, expected;
   fu_op_t fu_op;
 
-  shifter #(
-    .XLEN       (32),
-    .SLICE_WIDTH(8)
-  ) dut (
+  shifter dut (
     .clk_i (clk),
     .rst_ni(rst_n),
 
@@ -105,6 +104,7 @@ module shifter_tb;
     @(posedge clk) cycle = 1;
     @(posedge clk) cycle = 2;
     @(posedge clk) cycle = 3;
+    @(posedge clk) cycle = 4;
 
     @(posedge clk) @(posedge clk);
 

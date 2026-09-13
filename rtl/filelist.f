@@ -1,0 +1,13 @@
+rtl/config.svh
+rtl/types.svh
+rtl/tt_um_ubc_montreal.sv
+rtl/core/rv32e_core_wrapper.sv
+rtl/core/alu.sv
+rtl/core/fu.sv
+rtl/core/regfile.sv
+rtl/core/shifter.sv
+rtl/core/simple_alu.sv
+rtl/io/io_wrapper.sv
+rtl/io/common_reg_bank.sv
+rtl/io/io_bus_interconnect.sv
+rtl/io/qspi_controller.sv

@@ -14,6 +14,7 @@
 
 `timescale 1ns / 1ps
 
+`include "config.svh"
 `include "types.svh"
 
 module fu_tb;
@@ -29,10 +30,7 @@ module fu_tb;
   slice_t opa, opb, result;
   word_t a, b, out, expected;
 
-  fu #(
-    .XLEN       (32),
-    .SLICE_WIDTH(8)
-  ) dut (
+  fu dut (
     .clk_i (clk),
     .rst_ni(rst_n),
 

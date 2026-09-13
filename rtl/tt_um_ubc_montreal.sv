@@ -20,7 +20,7 @@
  *            exactly. Do not modify the port names.
  */
 /* verilog_lint: waive module-filename */
-module tt_top_ubc_montreal (
+module tt_um_ubc_montreal (
   /* verilog_lint: waive-start port-name-suffix */
   /* Dedicated inputs. */
   input wire [7:0] ui_in,
@@ -28,11 +28,11 @@ module tt_top_ubc_montreal (
   /* Dedicated outputs. */
   output wire [7:0] uo_out,
 
-  /* I/O: input path. */
+  /* IO: input path. */
   input  wire [7:0] uio_in,
-  /* I/O: output path. */
+  /* IO: output path. */
   output wire [7:0] uio_out,
-  /* I/O: active-high output enable. */
+  /* IO: active-high output enable. */
   output wire [7:0] uio_oe,
 
   /* Design enable signal. This will be 1 when the design is powered. */
@@ -44,7 +44,11 @@ module tt_top_ubc_montreal (
   /* verilog_lint: waive-stop port-name-suffix */
 );
 
-  /* Temporary output assignments. Unused pins must be assigned to 0. */
+  /* IO bus handshaking. */
+  io_bus_req_t  core_req;
+  io_bus_resp_t core_resp;
+
+  /* TODO: Temporary output assignments. Unused pins must be assigned to 0. */
   assign uo_out  = ui_in + uio_in;
   assign uio_out = '0;
   assign uio_oe  = '0;
@@ -54,18 +58,16 @@ module tt_top_ubc_montreal (
 
   rv32e_core_wrapper u_rv32e_core_wrapper ();
 
-  qspi_controller u_qspi_controller (
-    /* Clock. */
-    .clk(),
-    /* Active-low reset. */
-    .rst_n(),
+  io_wrapper u_io_wrapper (
+    .clk_i,
+    .rst_ni,
 
-    /* I/O: input path. */
-    .uio_in(),
-    /* I/O: output path. */
-    .uio_out(),
-    /* I/O: active high output enable. */
-    .uio_oe()
+    .core_req_i (core_req),
+    .core_resp_o(core_resp),
+
+    .uio_in (uio_in),
+    .uio_out(uio_out),
+    .uio_oe (uio_oe)
   );
 
-endmodule : tt_top_ubc_montreal
+endmodule : tt_um_ubc_montreal
