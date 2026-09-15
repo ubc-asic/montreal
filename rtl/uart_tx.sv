@@ -137,8 +137,10 @@ module uart_tx (
     if (!rst_ni) begin
       cycle_cnt_q <= '0;
     end else if ((state_q == TX_IDLE) || shift_en) begin
+      /* verilog_lint: waive dff-name-style */
       cycle_cnt_q <= '0;
     end else begin
+      /* verilog_lint: waive dff-name-style */
       cycle_cnt_q <= cycle_cnt_q + 1'b1;
     end
   end
@@ -199,8 +201,10 @@ module uart_tx (
       shift_q <= '0;
     /* A write arriving mid-frame will be dropped, silently */
     end else if ((state_q == TX_IDLE) && start_i) begin
+      /* verilog_lint: waive dff-name-style */
       shift_q <= data_i;
     end else if ((state_q == TX_DATA) && shift_en) begin
+      /* verilog_lint: waive dff-name-style */
       shift_q <= {1'b0, shift_q[SLICE_WIDTH-1:1]};
     end
   end
@@ -210,8 +214,10 @@ module uart_tx (
     if (!rst_ni) begin
       bit_cnt_q <= '0;
     end else if (state_q != TX_DATA) begin
+      /* verilog_lint: waive dff-name-style */
       bit_cnt_q <= '0;
     end else if (shift_en) begin
+      /* verilog_lint: waive dff-name-style */
       bit_cnt_q <= bit_cnt_q + 1'b1;
     end
   end
@@ -245,11 +251,13 @@ module uart_tx (
       tx_q <= 1'b1;
     end else begin
       unique case (state_q)
+        /* verilog_lint: waive-start dff-name-style */
         TX_IDLE:  tx_q <= 1'b1;
         TX_START: tx_q <= 1'b0;
         TX_DATA:  tx_q <= shift_q[0];
         TX_STOP:  tx_q <= 1'b1;
         default:  tx_q <= 1'b1;
+        /* verilog_lint: waive-stop dff-name-style */
       endcase
     end
   end
