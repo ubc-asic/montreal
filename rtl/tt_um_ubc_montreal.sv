@@ -59,8 +59,8 @@ module tt_um_ubc_montreal (
   rv32e_core_wrapper u_rv32e_core_wrapper ();
 
   io_wrapper u_io_wrapper (
-    .clk_i,
-    .rst_ni,
+    .clk_i (clk),
+    .rst_ni(rst_n),
 
     .core_req_i (core_req),
     .core_resp_o(core_resp),
