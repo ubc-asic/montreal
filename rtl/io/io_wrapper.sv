@@ -48,19 +48,19 @@ module io_wrapper (
     .rst_ni,
 
     /* Core-facing port. */
-    .core_req_i (),
+    .core_req_i(),
     .core_resp_o(),
 
-    /* Fan-out to QSPI controller. */
-    .qspi_req_o (),
+    /* Fan-out to QSPI Controller. */
+    .qspi_req_o(),
     .qspi_resp_i(),
 
-    /* Fan-out to UART controller. */
-    .uart_req_o (),
+    /* Fan-out to UART Controller. */
+    .uart_req_o(),
     .uart_resp_i(),
 
-    /* Fan-out to common regbank. */
-    .regbank_req_o (),
+    /* Fan-out to Common Regbank. */
+    .regbank_req_o(),
     .regbank_resp_i()
   );
 
